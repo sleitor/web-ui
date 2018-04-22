@@ -39,6 +39,7 @@ export interface ViewModel {
 export interface ViewConfigModel {
 
   postit?: PostItConfigModel;
+  kanban?: KanbanConfigModel;
   search?: SearchConfigModel;
   table?: TableConfigModel;
   table2?: TableConfig;
@@ -47,6 +48,12 @@ export interface ViewConfigModel {
 }
 
 export interface PostItConfigModel {
+
+  documentIdsOrder?: string[];
+
+}
+
+export interface KanbanConfigModel {
 
   documentIdsOrder?: string[];
 

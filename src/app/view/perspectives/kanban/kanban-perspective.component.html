@@ -1,0 +1,33 @@
+<div class="mx-5" #layout>
+  <div class="m-2">
+    <add-document
+      [attr.order]="-10000"
+      [hasCollection]="hasSingleCollection()"
+      [hasRights]="hasCreateRights()"
+      (createKanban)="createKanban($event)">
+    </add-document>
+  </div>
+
+  <div class="post-it-document-layout">
+    <kanban-document *ngFor="let kanban of kanbans; let idx = index; trackBy:trackByDocument"
+                      class="layout-item card post-it {{ !kanban.initialized ? 'uninitialized' : 'initialized' }}"
+                      [attr.order]="kanban.order"
+                      [kanbanModel]="kanbanWithIndex(kanban, idx)"
+                      [perspectiveId]="perspectiveId"
+                      [layoutManager]="layoutManager"
+                      [selectionHelper]="selectionHelper"
+                      [navigationHelper]="navigationHelper"
+                      (removed)="deleteKanban(kanban)"
+                      (changes)="kanbanChanged(kanban)"></kanban-document>
+
+    <label *ngIf="(!hasSingleCollection() || !hasCreateRights()) && !kanbans.length"
+           class="label-centered"
+           i18n="@@document.list.empty">Nothing To Show</label>
+  </div>
+</div>
+
+<div class="fading loading-text text-center py-5"
+     [style.opacity]="infiniteScroll.isLoading() ? 1 : 0"
+     i18n="@@documents.post.it.loading">
+  Loading...
+</div>

@@ -38,6 +38,7 @@ import {Table2PerspectiveComponent} from './perspectives/table2/table2-perspecti
 import {ViewLoadingComponent} from './view-loading.component';
 import {ViewComponent} from './view.component';
 import {ViewRedirectGuard} from '../core/guards/view/view-redirect.guard';
+import {KanbanPerspectiveComponent} from './perspectives/kanban/kanban-perspective.component';
 
 const viewRoutes: Routes = [
   {
@@ -48,6 +49,10 @@ const viewRoutes: Routes = [
       {
         path: Perspective.PostIt,
         component: PostItPerspectiveComponent
+      },
+      {
+        path: Perspective.Kanban,
+        component: KanbanPerspectiveComponent
       },
       {
         path: Perspective.Search,

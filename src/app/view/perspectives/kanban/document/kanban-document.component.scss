@@ -1,0 +1,96 @@
+@import "../../../../shared/variables";
+
+:host {
+
+  .card-header {
+    cursor: move;
+    width: 100%;
+  }
+
+  .card-header .button {
+    cursor: auto;
+    transition: background $animation-color-duration, opacity $animation-color-duration;
+
+    &:hover {
+      background: $grey-darker-color;
+    }
+  }
+
+  .icon {
+    margin-top: 4px;
+  }
+
+  .collection-name {
+    flex-grow: 2;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .always-visible{
+    opacity: 1 !important;
+  }
+
+  .card-body {
+    font-size: 15px;
+  }
+
+  .button, .buttons {
+    transition: opacity $animation-color-duration;
+    opacity: 0;
+  }
+
+  .buttons {
+    a {
+      transition: background-position $animation-color-duration;
+      background: linear-gradient(to top, #e8e8e8 50%, transparent 50%);
+      background-size: 100% 200%;
+      background-position: right top;
+
+      &:hover {
+        background-position: right bottom;
+      }
+    }
+  }
+
+  li {
+    border-bottom: 1px solid #e5e5e5;
+    display: inline-flex;
+    padding: 2px 1px;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  .attribute input {
+    width: 75px;
+    color: $primary;
+    font-style: italic;
+  }
+
+  span:focus, span input:focus {
+    outline: auto !important;
+  }
+
+  input {
+    padding: 0 3px;
+    width: 100%;
+    pointer-events: none;
+  }
+
+  input:read-only:focus {
+    background: inherit;
+    color: inherit;
+  }
+}
+
+.overflow-hidden {
+  overflow:hidden;
+}
+
+:host:hover {
+  .button, .buttons {
+    opacity: 1;
+  }
+}

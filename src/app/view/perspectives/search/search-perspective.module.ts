@@ -30,12 +30,14 @@ import {SearchResultsDirective} from './search-results.directive';
 import {SearchViewsComponent} from './views/search-views.component';
 import {ViewDetailComponent} from "./views/view-detail/view-detail.component";
 import {SearchBoxModule} from "../../../shared/search-box/search-box.module";
+import {KanbanPerspectiveModule} from '../kanban/kanban-perspective.module';
 
 @NgModule({
   imports: [
     RouterModule,
     SharedModule,
     PostItPerspectiveModule,
+    KanbanPerspectiveModule,
     SearchBoxModule
   ],
   declarations: [
