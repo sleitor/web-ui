@@ -64,4 +64,3 @@ import './assets/js/custom.js';
 // import 'intl';  // Run `npm install --save intl`.
 
 window['Muuri'] = require('../node_modules/muuri/muuri.min.js');
-

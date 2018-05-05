@@ -40,10 +40,10 @@ export class LinkInstancesEffects {
     withLatestFrom(this.store$.select(selectLinkInstancesQueries)),
     skipWhile(([action, queries]) => queries.some(query => QueryHelper.equal(query, action.payload.query))),
     mergeMap(([action]) => this.linkInstanceService.getLinkInstances(action.payload.query).pipe(
-      map(dtos => ({action, linkInstances: dtos.map(dto => LinkInstanceConverter.fromDto(dto))}))
-    )),
-    map(({action, linkInstances}) => new LinkInstancesAction.GetSuccess({linkInstances: linkInstances, query: action.payload.query})),
-    catchError((error) => Observable.of(new LinkInstancesAction.GetFailure({error: error})))
+      map(dtos => ({action, linkInstances: dtos.map(dto => LinkInstanceConverter.fromDto(dto))})),
+      map(({action, linkInstances}) => new LinkInstancesAction.GetSuccess({linkInstances: linkInstances, query: action.payload.query})),
+      catchError((error) => Observable.of(new LinkInstancesAction.GetFailure({error: error})))
+    ))
   );
 
   @Effect()
@@ -63,11 +63,17 @@ export class LinkInstancesEffects {
       const linkInstanceDto = LinkInstanceConverter.toDto(action.payload.linkInstance);
 
       return this.linkInstanceService.createLinkInstance(linkInstanceDto).pipe(
-        map(dto => LinkInstanceConverter.fromDto(dto))
+        map(dto => ({action, linkInstance: LinkInstanceConverter.fromDto(dto)})),
+        tap(({action, linkInstance}) => {
+          const callback = action.payload.callback;
+          if (callback) {
+            callback(linkInstance.id);
+          }
+        }),
+        map(({linkInstance}) => new LinkInstancesAction.CreateSuccess({linkInstance})),
+        catchError((error) => Observable.of(new LinkInstancesAction.CreateFailure({error: error})))
       );
-    }),
-    map(linkInstance => new LinkInstancesAction.CreateSuccess({linkInstance: linkInstance})),
-    catchError((error) => Observable.of(new LinkInstancesAction.CreateFailure({error: error})))
+    })
   );
 
   @Effect()
@@ -87,11 +93,11 @@ export class LinkInstancesEffects {
       const linkInstanceDto = LinkInstanceConverter.toDto(action.payload.linkInstance);
 
       return this.linkInstanceService.updateLinkInstance(action.payload.linkInstance.id, linkInstanceDto).pipe(
-        map(dto => LinkInstanceConverter.fromDto(dto))
+        map(dto => LinkInstanceConverter.fromDto(dto)),
+        map(linkInstance => new LinkInstancesAction.UpdateSuccess({linkInstance: linkInstance})),
+        catchError((error) => Observable.of(new LinkInstancesAction.UpdateFailure({error: error})))
       );
     }),
-    map(linkInstance => new LinkInstancesAction.UpdateSuccess({linkInstance: linkInstance})),
-    catchError((error) => Observable.of(new LinkInstancesAction.UpdateFailure({error: error})))
   );
 
   @Effect()
@@ -107,9 +113,32 @@ export class LinkInstancesEffects {
   @Effect()
   public delete$: Observable<Action> = this.actions$.pipe(
     ofType<LinkInstancesAction.Delete>(LinkInstancesActionType.DELETE),
-    mergeMap(action => this.linkInstanceService.deleteLinkInstance(action.payload.linkInstanceId)),
-    map(linkInstanceId => new LinkInstancesAction.DeleteSuccess({linkInstanceId: linkInstanceId})),
-    catchError((error) => Observable.of(new LinkInstancesAction.DeleteFailure({error: error})))
+    mergeMap(action => this.linkInstanceService.deleteLinkInstance(action.payload.linkInstanceId).pipe(
+      map(() => action),
+      tap(action => {
+        const callback = action.payload.callback;
+        if (callback) {
+          callback(action.payload.linkInstanceId);
+        }
+      }),
+      map(action => new LinkInstancesAction.DeleteSuccess({linkInstanceId: action.payload.linkInstanceId})),
+      catchError((error) => Observable.of(new LinkInstancesAction.DeleteFailure({error: error})))
+    ))
+  );
+
+  @Effect()
+  public deleteConfirm$: Observable<Action> = this.actions$.pipe(
+    ofType<LinkInstancesAction.DeleteConfirm>(LinkInstancesActionType.DELETE_CONFIRM),
+    map((action: LinkInstancesAction.DeleteConfirm) => {
+      const title = this.i18n({id: 'link.instance.delete.dialog.title', value: 'Delete link'});
+      const message = this.i18n({id: 'link.instance.delete.dialog.message', value: 'Do you really want to delete link between records?'});
+
+      return new NotificationsAction.Confirm({
+        title,
+        message,
+        action: new LinkInstancesAction.Delete(action.payload)
+      });
+    })
   );
 
   @Effect()

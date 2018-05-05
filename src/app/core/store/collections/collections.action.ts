@@ -22,6 +22,7 @@ import {QueryModel} from '../navigation/query.model';
 import {PermissionModel, PermissionType} from '../permissions/permissions.model';
 import {AttributeModel, CollectionModel} from './collection.model';
 import {ImportedCollection} from "../../dto/imported-collection";
+import {Workspace} from '../navigation/workspace.model';
 
 export enum CollectionsActionType {
 
@@ -69,10 +70,6 @@ export enum CollectionsActionType {
   CHANGE_PERMISSION_SUCCESS = '[Collections] Change Permission :: Success',
   CHANGE_PERMISSION_FAILURE = '[Collections] Change Permission :: Failure',
 
-  REMOVE_PERMISSION = '[Collections] Remove Permission',
-  REMOVE_PERMISSION_SUCCESS = '[Collections] Remove Permission :: Success',
-  REMOVE_PERMISSION_FAILURE = '[Collections] Remove Permission :: Failure',
-
   CLEAR = '[Collections] Clear'
 
 }
@@ -82,7 +79,7 @@ export namespace CollectionsAction {
   export class Get implements Action {
     public readonly type = CollectionsActionType.GET;
 
-    public constructor(public payload: { query: QueryModel }) {
+    public constructor(public payload: { query: QueryModel, workspace?: Workspace }) {
     }
   }
 
@@ -292,7 +289,7 @@ export namespace CollectionsAction {
   export class ChangePermission implements Action {
     public readonly type = CollectionsActionType.CHANGE_PERMISSION;
 
-    public constructor(public payload: { collectionId: string, type: PermissionType, permission: PermissionModel }) {
+    public constructor(public payload: { collectionId: string, type: PermissionType, permission: PermissionModel, currentPermission: PermissionModel }) {
     }
   }
 
@@ -306,28 +303,7 @@ export namespace CollectionsAction {
   export class ChangePermissionFailure implements Action {
     public readonly type = CollectionsActionType.CHANGE_PERMISSION_FAILURE;
 
-    public constructor(public payload: { error: any }) {
-    }
-  }
-
-  export class RemovePermission implements Action {
-    public readonly type = CollectionsActionType.REMOVE_PERMISSION;
-
-    public constructor(public payload: { collectionId: string, type: PermissionType, name: string }) {
-    }
-  }
-
-  export class RemovePermissionSuccess implements Action {
-    public readonly type = CollectionsActionType.REMOVE_PERMISSION_SUCCESS;
-
-    public constructor(public payload: { collectionId: string, type: PermissionType, name: string }) {
-    }
-  }
-
-  export class RemovePermissionFailure implements Action {
-    public readonly type = CollectionsActionType.REMOVE_PERMISSION_FAILURE;
-
-    public constructor(public payload: { error: any }) {
+    public constructor(public payload: { collectionId: string, type: PermissionType, permission: PermissionModel, error: any }) {
     }
   }
 
@@ -349,6 +325,5 @@ export namespace CollectionsAction {
     RemoveFavorite | RemoveFavoriteSuccess | RemoveFavoriteFailure |
     ChangeAttribute | ChangeAttributeSuccess | ChangeAttributeFailure |
     RemoveAttribute | RemoveAttributeSuccess | RemoveAttributeFailure |
-    ChangePermission | ChangePermissionSuccess | ChangePermissionFailure |
-    RemovePermission | RemovePermissionSuccess | RemovePermissionFailure | Clear;
+    ChangePermission | ChangePermissionSuccess | ChangePermissionFailure | Clear;
 }

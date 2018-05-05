@@ -19,14 +19,20 @@
 
 import {Injectable} from '@angular/core';
 import {Actions, Effect, ofType} from '@ngrx/effects';
-import {Action} from '@ngrx/store';
+import {Action, Store} from '@ngrx/store';
 import {I18n} from '@ngx-translate/i18n-polyfill';
 import {Observable} from 'rxjs/Observable';
-import {catchError, map, mergeMap, tap} from 'rxjs/operators';
+import {catchError, filter, map, mergeMap, tap, withLatestFrom} from 'rxjs/operators';
 import {UserService} from '../../rest';
 import {NotificationsAction} from '../notifications/notifications.action';
 import {UserConverter} from './user.converter';
 import {UsersAction, UsersActionType} from './users.action';
+import {AppState} from "../app.state";
+import {GlobalService} from '../../rest/global.service';
+import {selectUsersLoadedForOrganization} from './users.state';
+import {HttpErrorResponse} from "@angular/common/http";
+import {RouterAction} from "../router/router.action";
+import {selectSelectedOrganization} from "../organizations/organizations.state";
 
 @Injectable()
 export class UsersEffects {
@@ -34,11 +40,14 @@ export class UsersEffects {
   @Effect()
   public get$: Observable<Action> = this.actions$.pipe(
     ofType<UsersAction.Get>(UsersActionType.GET),
-    mergeMap((action) => this.userService.getUsers(action.payload.organizationId).pipe(
-      map(dtos => dtos.map(dto => UserConverter.fromDto(dto)))
+    withLatestFrom(this.store$.select(selectUsersLoadedForOrganization)),
+    filter(([action, loadedOrganizationId]) => loadedOrganizationId !== action.payload.organizationId),
+    map(([action, loaded]) => action),
+    mergeMap(action => this.userService.getUsers(action.payload.organizationId).pipe(
+      map(dtos => ({organizationId: action.payload.organizationId, users: dtos.map(dto => UserConverter.fromDto(dto))})),
+      map(({organizationId, users}) => new UsersAction.GetSuccess({organizationId, users})),
+      catchError(error => Observable.of(new UsersAction.GetFailure({error: error})))
     )),
-    map(users => new UsersAction.GetSuccess({users: users})),
-    catchError(error => Observable.of(new UsersAction.GetFailure({error: error})))
   );
 
   @Effect()
@@ -52,24 +61,48 @@ export class UsersEffects {
   );
 
   @Effect()
+  public getCurrentUser$: Observable<Action> = this.actions$.pipe(
+    ofType<UsersAction.GetCurrentUser>(UsersActionType.GET_CURRENT_USER),
+    mergeMap(() => this.globalService.getCurrentUser().pipe(
+      map(user => UserConverter.fromDto(user))
+    )),
+    map(user => new UsersAction.GetCurrentUserSuccess({user}))
+  );
+
+  @Effect()
   public create$: Observable<Action> = this.actions$.pipe(
     ofType<UsersAction.Create>(UsersActionType.CREATE),
     mergeMap(action => {
       const userDto = UserConverter.toDto(action.payload.user);
 
       return this.userService.createUser(action.payload.organizationId, userDto).pipe(
-        map(dto => UserConverter.fromDto(dto))
+        map(dto => UserConverter.fromDto(dto)),
+        map(user => new UsersAction.CreateSuccess({user: user})),
+        catchError(error => Observable.of(new UsersAction.CreateFailure({error: error})))
       );
     }),
-    map(user => new UsersAction.CreateSuccess({user: user})),
-    catchError(error => Observable.of(new UsersAction.CreateFailure({error: error})))
   );
 
   @Effect()
   public createFailure$: Observable<Action> = this.actions$.pipe(
     ofType<UsersAction.CreateFailure>(UsersActionType.CREATE_FAILURE),
     tap(action => console.error(action.payload.error)),
-    map(() => {
+    withLatestFrom(this.store$.select(selectSelectedOrganization)),
+    map(([action, organization]) => {
+      if (action.payload.error instanceof HttpErrorResponse && action.payload.error.status == 402) {
+        const title = this.i18n({ id: 'serviceLimits.trial', value: 'Trial Service' });
+        const message = this.i18n({
+          id: 'user.create.serviceLimits',
+          value: 'You are currently on the Trial plan which allows you to invite only three users to your organization. Do you want to upgrade to Business now?' });
+        return new NotificationsAction.Confirm({
+          title,
+          message,
+          action: new RouterAction.Go({
+            path: ['/organization', organization.code, 'detail'],
+            extras: { fragment: 'orderService' }
+          })
+        });
+      }
       const message = this.i18n({id: 'user.create.fail', value: 'Failed to create user'});
       return new NotificationsAction.Error({message});
     })
@@ -82,11 +115,11 @@ export class UsersEffects {
       const userDto = UserConverter.toDto(action.payload.user);
 
       return this.userService.updateUser(action.payload.organizationId, userDto.id, userDto).pipe(
-        map(dto => UserConverter.fromDto(dto))
+        map(dto => UserConverter.fromDto(dto)),
+        map(user => new UsersAction.UpdateSuccess({user: user})),
+        catchError(error => Observable.of(new UsersAction.UpdateFailure({error: error})))
       );
-    }),
-    map(user => new UsersAction.UpdateSuccess({user: user})),
-    catchError(error => Observable.of(new UsersAction.UpdateFailure({error: error})))
+    })
   );
 
   @Effect()
@@ -103,10 +136,10 @@ export class UsersEffects {
   public delete$: Observable<Action> = this.actions$.pipe(
     ofType<UsersAction.Delete>(UsersActionType.DELETE),
     mergeMap(action => this.userService.deleteUser(action.payload.organizationId, action.payload.userId).pipe(
-      map(() => action)
-    )),
-    map(action => new UsersAction.DeleteSuccess(action.payload)),
-    catchError(error => Observable.of(new UsersAction.DeleteFailure({error: error})))
+      map(() => action),
+      map(action => new UsersAction.DeleteSuccess(action.payload)),
+      catchError(error => Observable.of(new UsersAction.DeleteFailure({error: error})))
+    ))
   );
 
   @Effect()
@@ -121,7 +154,9 @@ export class UsersEffects {
 
   constructor(private actions$: Actions,
               private i18n: I18n,
-              private userService: UserService) {
+              private store$: Store<AppState>,
+              private userService: UserService,
+              private globalService: GlobalService) {
   }
 
 }
