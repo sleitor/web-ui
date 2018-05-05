@@ -18,7 +18,6 @@
  */
 
 import {AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output, ViewChild} from '@angular/core';
-
 import {Store} from '@ngrx/store';
 import {isString} from 'util';
 import {LumeerError} from '../../../../core/error/lumeer.error';
@@ -264,7 +263,7 @@ export class PostItDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   public hasWriteRole(): boolean {
-    return this.collectionRoles && this.collectionRoles.includes(Role.Write)
+    return this.collectionRoles && this.collectionRoles.includes(Role.Write);
   }
 
   public ngOnDestroy(): void {

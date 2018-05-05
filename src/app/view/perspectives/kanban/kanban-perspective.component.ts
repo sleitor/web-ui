@@ -39,7 +39,7 @@ import {KeyCode} from '../../../shared/key-code';
 import {HashCodeGenerator} from '../../../shared/utils/hash-code-generator';
 import {CollectionModel} from '../../../core/store/collections/collection.model';
 import {Permission} from '../../../core/dto';
-import {Role} from '../../../shared/permissions/role';
+import {Role} from '../../../core/model/role';
 import Create = DocumentsAction.Create;
 import UpdateData = DocumentsAction.UpdateData;
 
@@ -117,7 +117,7 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
       '.post-it-document-layout',
       new KanbanLayoutConfig(),
       this.sortByOrder,
-      'post-it-document',
+      'kanban-document',
       this.zone
     );
 

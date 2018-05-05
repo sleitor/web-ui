@@ -25,7 +25,7 @@ import {LumeerError} from '../../../../core/error/lumeer.error';
 import {AppState} from '../../../../core/store/app.state';
 import {DocumentsAction} from '../../../../core/store/documents/documents.action';
 import {KeyCode} from '../../../../shared/key-code';
-import {Role} from '../../../../shared/permissions/role';
+import {Role} from '../../../../core/model/role';
 import {PostItLayout} from '../../../../shared/utils/layout/post-it-layout';
 import {AttributePair} from '../document-data/attribute-pair';
 import {KanbanDocumentModel} from '../document-data/kanban-document-model';
@@ -96,6 +96,9 @@ export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   @Input()
+    public collectionRoles: string[];
+
+  @Input()
   public perspectiveId: string;
 
   @Input()
@@ -145,12 +148,10 @@ export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     this.layoutManager.add(this.element.nativeElement);
   }
 
-  public clickOnAttributePair(column: number, row: number): void {
-    const enableEditMode = this.selectionHelper.wasPreviouslySelected(column, row, this.kanbanModel.document.id);
-
-    this.selectionHelper.setEditMode(enableEditMode);
-    this.selectionHelper.select(column, row, this.kanbanModel);
-  }
+    public clickOnAttributePair(column: number, row: number): void {
+        this.selectionHelper.setEditMode(false);
+        this.selectionHelper.select(column, row, this.kanbanModel);
+    }
 
   public onEnterKeyPressedInEditMode(): void {
     this.selectionHelper.selectNext(this.kanbanModel);
