@@ -8,9 +8,9 @@
     </add-document>
   </div>
 
-  <div class="post-it-document-layout">
+  <div class="kanban-document-layout">
     <kanban-document *ngFor="let kanban of kanbans; let idx = index; trackBy:trackByDocument"
-                      class="layout-item card post-it {{ !kanban.initialized ? 'uninitialized' : 'initialized' }}"
+                      class="layout-item card kanban {{ !kanban.initialized ? 'uninitialized' : 'initialized' }}"
                       [attr.order]="kanban.order"
                       [kanbanModel]="kanbanWithIndex(kanban, idx)"
                       [perspectiveId]="perspectiveId"

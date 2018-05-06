@@ -114,10 +114,10 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
 
   public ngOnInit(): void {
     this.layoutManager = new KanbanSortingLayout(
-      '.post-it-document-layout',
+      '.kanban-document-layout',
       new KanbanLayoutConfig(),
       this.sortByOrder,
-      'kanban-document',
+      '.kanban-document-header',
       this.zone
     );
 

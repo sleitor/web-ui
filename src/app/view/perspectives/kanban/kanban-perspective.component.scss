@@ -3,7 +3,7 @@
 :host {
   display: block;
 
-  .post-it-document-layout {
+  .kanban-document-layout {
     transition: height $animation-duration;
     position: relative;
     margin: 0 auto;
@@ -16,11 +16,11 @@
     width: $post-it-width;
   }
 
-  .post-it:hover, .selected {
+  .kanban:hover, .selected {
     box-shadow: $shadow-default;
   }
 
-  .post-it:hover {
+  .kanban:hover {
     z-index: $z-index-hovered;
   }
 

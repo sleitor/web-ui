@@ -17,7 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, NgZone, OnDestroy, OnInit, Output, ViewChild} from '@angular/core';
 import {Store} from '@ngrx/store';
 import {isString} from 'util';
 import {Permission} from '../../../../core/dto';
@@ -26,7 +26,6 @@ import {AppState} from '../../../../core/store/app.state';
 import {DocumentsAction} from '../../../../core/store/documents/documents.action';
 import {KeyCode} from '../../../../shared/key-code';
 import {Role} from '../../../../core/model/role';
-import {PostItLayout} from '../../../../shared/utils/layout/post-it-layout';
 import {AttributePair} from '../document-data/attribute-pair';
 import {KanbanDocumentModel} from '../document-data/kanban-document-model';
 import {NavigationHelper} from '../util/navigation-helper';
@@ -34,6 +33,10 @@ import {SelectionHelper} from '../util/selection-helper';
 import {AttributeModel} from '../../../../core/store/collections/collection.model';
 import DeleteConfirm = DocumentsAction.DeleteConfirm;
 import Update = DocumentsAction.Update;
+import {KanbanLayout} from '../../../../shared/utils/layout/kanban-layout';
+import {KanbanColumnLayout} from '../../../../shared/utils/layout/kanban-column-layout';
+import {KanbanColumnLayoutConfig} from '../../../../shared/utils/layout/kanban-column-layout-config';
+import {KanbanColumnSortingLayout} from '../../../../shared/utils/layout/kanban-column-sorting-layout';
 
 @Component({
   selector: 'kanban-document',
@@ -102,7 +105,10 @@ export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   public perspectiveId: string;
 
   @Input()
-  public layoutManager: PostItLayout;
+  public layoutManager: KanbanLayout;
+
+  @Input()
+  public columnLayoutManagers: KanbanColumnLayout[];
 
   @Input()
   public navigationHelper: NavigationHelper;
@@ -126,6 +132,7 @@ export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   public newAttributePair: AttributePair = new AttributePair();
 
   constructor(private store: Store<AppState>,
+              private zone: NgZone,
               private element: ElementRef) {
   }
 
@@ -146,6 +153,19 @@ export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
   public ngAfterViewInit(): void {
     this.layoutManager.add(this.element.nativeElement);
+    this.columnLayoutManagers = this.columnLayoutManagers || [];
+    const conf = new KanbanColumnLayoutConfig();
+    this.columnLayoutManagers.push(
+      new KanbanColumnSortingLayout(
+        '.kanban-column-layout',
+        conf,
+        this.sortByOrder,
+        'li',
+        this.zone
+      )
+    );
+    let elements = this.element.nativeElement.querySelector(conf.items);
+    this.columnLayoutManagers[this.columnLayoutManagers.length - 1].add(elements);
   }
 
     public clickOnAttributePair(column: number, row: number): void {
@@ -215,9 +235,13 @@ export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     }
   }
 
+  private sortByOrder(item: any, element: HTMLElement): number {
+      return Number(element.getAttribute('order'));
+  }
+
   private removeAttributePair() {
-    const selectedRow = this.selectionHelper.selection.row;
-    this.attributePairs.splice(selectedRow, 1);
+  const selectedRow = this.selectionHelper.selection.row;
+  this.attributePairs.splice(selectedRow, 1);
 
     setTimeout(() => {
       this.selectionHelper.select(

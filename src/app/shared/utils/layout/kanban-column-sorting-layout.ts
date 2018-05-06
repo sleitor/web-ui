@@ -18,13 +18,13 @@
  */
 
 import {NgZone} from '@angular/core';
-import {KanbanLayout} from './kanban-layout';
-import {KanbanLayoutConfig} from './kanban-layout-config';
+import {KanbanColumnLayout} from './kanban-column-layout';
+import {KanbanColumnLayoutConfig} from './kanban-column-layout-config';
 
-export class KanbanSortingLayout extends KanbanLayout {
+export class KanbanColumnSortingLayout extends KanbanColumnLayout {
 
   constructor(containerClassName: string,
-              parameters: KanbanLayoutConfig,
+              parameters: KanbanColumnLayoutConfig,
               sortFunction: (item: any, element: HTMLElement) => number,
               selectorOfDraggableElements: string,
               zone: NgZone) {
