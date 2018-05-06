@@ -17,7 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, EventEmitter, OnDestroy, OnInit, Output} from '@angular/core';
 import {OrganizationModel} from "../../../../../core/store/organizations/organization.model";
 import {Subscription} from "rxjs/Subscription";
 import {Store} from "@ngrx/store";
@@ -31,6 +31,7 @@ import {PaymentModel} from "../../../../../core/store/organizations/payment/paym
 import {selectPaymentsByWorkspaceSorted} from "../../../../../core/store/organizations/payment/payments.state";
 import {PaymentsAction} from "../../../../../core/store/organizations/payment/payments.action";
 import {ServiceLimitsAction} from "../../../../../core/store/organizations/service-limits/service-limits.action";
+import {NotificationsAction} from "../../../../../core/store/notifications/notifications.action";
 
 @Component({
   selector: 'payments-list',
@@ -38,6 +39,9 @@ import {ServiceLimitsAction} from "../../../../../core/store/organizations/servi
   styleUrls: ['./payments-list.component.scss']
 })
 export class PaymentsListComponent implements OnInit, OnDestroy {
+
+  @Output()
+  public repay = new EventEmitter<string>();
 
   private organization: OrganizationModel;
   private organizationSubscription: Subscription;
@@ -83,6 +87,20 @@ export class PaymentsListComponent implements OnInit, OnDestroy {
       organizationId: this.organization.id,
       paymentId,
       nextAction: new ServiceLimitsAction.GetServiceLimits({ organizationId: this.organization.id })
+    }));
+  }
+
+  public repayEvent(gwUrl: string) {
+    this.repay.emit(gwUrl);
+  }
+
+  public addUsers() {
+    this.store.dispatch(new NotificationsAction.Info({
+      title: this.i18n({ id: "organization.payments.addUsers.title", value: "Add Users" }),
+      message: this.i18n({
+        id: "organization.payments.addUsers.info",
+        value: "To add more users to your organization, please contact support@lumeer.io.",
+      })
     }));
   }
 }
