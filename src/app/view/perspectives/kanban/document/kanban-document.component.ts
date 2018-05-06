@@ -108,7 +108,7 @@ export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   public layoutManager: KanbanLayout;
 
   @Input()
-  public columnLayoutManagers: KanbanColumnLayout[];
+  public columnLayoutManager: KanbanColumnLayout;
 
   @Input()
   public navigationHelper: NavigationHelper;
@@ -136,8 +136,17 @@ export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy
               private element: ElementRef) {
   }
 
+  private kanbanColumnLayoutConfig = new KanbanColumnLayoutConfig();
   public ngOnInit(): void {
     this.disableScrollOnNavigation();
+      this.columnLayoutManager =
+          new KanbanColumnSortingLayout(
+              '.kanban-column-layout',
+              this.kanbanColumnLayoutConfig,
+              this.sortByOrder,
+              'li',
+              this.zone
+          );
   }
 
   private disableScrollOnNavigation(): void {
@@ -153,19 +162,8 @@ export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
   public ngAfterViewInit(): void {
     this.layoutManager.add(this.element.nativeElement);
-    this.columnLayoutManagers = this.columnLayoutManagers || [];
-    const conf = new KanbanColumnLayoutConfig();
-    this.columnLayoutManagers.push(
-      new KanbanColumnSortingLayout(
-        '.kanban-column-layout',
-        conf,
-        this.sortByOrder,
-        'li',
-        this.zone
-      )
-    );
-    let elements = this.element.nativeElement.querySelector(conf.items);
-    this.columnLayoutManagers[this.columnLayoutManagers.length - 1].add(elements);
+    let elements = this.element.nativeElement.querySelectorAll(this.kanbanColumnLayoutConfig.items);
+    this.columnLayoutManager.add(elements);
   }
 
     public clickOnAttributePair(column: number, row: number): void {
