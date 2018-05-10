@@ -83,6 +83,15 @@
     background: inherit;
     color: inherit;
   }
+
+  .masonry-layout-item-dragging {
+    cursor: move;
+  }
+
+  .masonry-layout-item-dragging, .masonry-layout-item-releasing {
+    z-index: $z-index-selected;
+  }
+
 }
 
 .overflow-hidden {
