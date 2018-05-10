@@ -17,8 +17,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {NgZone} from '@angular/core';
-import {KanbanLayoutConfig} from './kanban-layout-config';
+import {ElementRef, NgZone} from '@angular/core';
+import {KanbanColumnLayoutConfig} from './kanban-column-layout-config';
 
 export class KanbanColumnLayout {
 
@@ -26,8 +26,9 @@ export class KanbanColumnLayout {
 
   protected insertingElementsAtIndex: number = 0;
 
-  constructor(protected containerClassName: string, protected parameters: KanbanLayoutConfig, protected zone: NgZone) {
+  constructor(protected containerClassName: string, protected parameters: KanbanColumnLayoutConfig, protected zone: NgZone, protected element: ElementRef) {
     this.addContainerClassIdentifierIfMissing();
+    this.isInitializedAffterAttempt();
   }
 
   private addContainerClassIdentifierIfMissing(): void {
@@ -90,13 +91,14 @@ export class KanbanColumnLayout {
   }
 
   private createLayout(): void {
+    const layout = this.element.nativeElement.querySelector(this.containerClassName);
     this.zone.runOutsideAngular(() => {
-      this.layout = new window['Muuri'](this.containerClassName, this.parameters);
+      this.layout = new window['Muuri'](layout, this.parameters);
     });
   }
 
   protected containerExists(): boolean {
-    return !!(document.querySelector(this.containerClassName));
+    return !!(this.element.nativeElement.querySelector(this.containerClassName));
   }
 
 }
