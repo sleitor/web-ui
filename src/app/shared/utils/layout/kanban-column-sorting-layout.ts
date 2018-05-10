@@ -25,16 +25,16 @@ export class KanbanColumnSortingLayout extends KanbanColumnLayout {
 
     constructor(containerClassName: string,
                 parameters: KanbanColumnLayoutConfig,
-                sortFunction: (item: any, element: HTMLElement) => number,
+                // sortFunction: (item: any, element: HTMLElement) => number,
                 selectorOfDraggableElements: string,
                 zone: NgZone,
                 element: ElementRef) {
 
     super(containerClassName, parameters, zone, element);
-    this.setSortingParameters(selectorOfDraggableElements, sortFunction);
+    this.setSortingParameters(selectorOfDraggableElements);
   }
 
-  private setSortingParameters(selectorOfDraggableElements: string, sortFunction: (item: any, element: HTMLElement) => number) {
+  private setSortingParameters(selectorOfDraggableElements: string) {
     this.parameters.dragEnabled = true;
 
     this.parameters.layoutOnInit = false;
@@ -45,9 +45,9 @@ export class KanbanColumnSortingLayout extends KanbanColumnLayout {
       handle: selectorOfDraggableElements
     };
 
-    this.parameters.sortData = {
-      order: sortFunction
-    };
+    // this.parameters.sortData = {
+    //   order: sortFunction
+    // };
   }
 
   protected relayout(): void {

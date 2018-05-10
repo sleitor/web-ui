@@ -158,7 +158,7 @@ export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       new KanbanColumnSortingLayout(
         '.kanban-column-layout',
         this.kanbanColumnLayoutConfig,
-        this.sortByOrder,
+        // this.sortByOrder,
         'li',
          this.zone,
          this.element
