@@ -64,8 +64,6 @@ export class KanbanColumnLayoutConfig {
 
   public dragEnabled = true;
 
-  public dragSort: () => any[];
-
   public dragContainer: HTMLElement = null;
 
   public dragStartPredicate: { distance: number, delay: number, handle: boolean | string } =
@@ -77,7 +75,7 @@ export class KanbanColumnLayoutConfig {
 
   public dragAxis: Axis = null;
 
-  public dragSort = true;
+  public dragSort: Function|Boolean = true;
 
   public dragSortInterval = 200;
 
