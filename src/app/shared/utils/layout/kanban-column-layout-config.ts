@@ -64,7 +64,7 @@ export class KanbanColumnLayoutConfig {
 
   public dragEnabled = true;
 
-  public dataSort: () => any[];
+  public dragSort: () => any[];
 
   public dragContainer: HTMLElement = null;
 

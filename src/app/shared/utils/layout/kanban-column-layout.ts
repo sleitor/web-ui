@@ -93,7 +93,7 @@ export class KanbanColumnLayout {
   private createLayout(): void {
     const layout = this.element.nativeElement.querySelector(this.containerClassName);
     const columns = this.columns;
-    this.parameters.dataSort = () => columns;
+    this.parameters.dragSort = () => columns;
     this.zone.runOutsideAngular(() => {
       this.layout = new window['Muuri'](layout, this.parameters);
       this.columns.push(this.layout);

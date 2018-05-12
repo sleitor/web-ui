@@ -62,7 +62,7 @@ export class KanbanLayoutConfig {
 
   public sortData: object = null;
 
-  public dragEnabled = false;
+  public dragEnabled = true;
 
   public dragContainer: HTMLElement = null;
 
