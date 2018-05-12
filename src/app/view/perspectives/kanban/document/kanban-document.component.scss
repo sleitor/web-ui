@@ -53,10 +53,15 @@
     }
   }
 
+  .kanban-column-layout {
+    position: relative;
+  }
+
   li {
     border-bottom: 1px solid #e5e5e5;
     display: inline-flex!important;
     padding: 2px 1px;
+    position: absolute;
 
     &:last-child {
       border-bottom: none;
