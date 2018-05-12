@@ -57,15 +57,20 @@
     position: relative;
   }
 
-  li {
+  li, .add-item {
     border-bottom: 1px solid #e5e5e5;
     display: inline-flex!important;
     padding: 2px 1px;
     position: absolute;
 
-    &:last-child {
+    &.read-only:last-child {
       border-bottom: none;
     }
+  }
+
+  .add-item {
+    position: initial;
+    border-bottom: none;
   }
 
   .attribute input {
