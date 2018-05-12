@@ -26,7 +26,7 @@ export class KanbanColumnLayout {
 
   protected insertingElementsAtIndex: number = 0;
 
-  constructor(protected containerClassName: string, protected parameters: KanbanColumnLayoutConfig, protected zone: NgZone, protected element: ElementRef) {
+  constructor(protected containerClassName: string, protected parameters: KanbanColumnLayoutConfig, protected zone: NgZone, protected element: ElementRef, public columns: any[]) {
     this.addContainerClassIdentifierIfMissing();
     this.isInitializedAffterAttempt();
   }
@@ -92,8 +92,11 @@ export class KanbanColumnLayout {
 
   private createLayout(): void {
     const layout = this.element.nativeElement.querySelector(this.containerClassName);
+    const columns = this.columns;
+    this.parameters.dataSort = () => columns;
     this.zone.runOutsideAngular(() => {
       this.layout = new window['Muuri'](layout, this.parameters);
+      this.columns.push(this.layout);
     });
   }
 

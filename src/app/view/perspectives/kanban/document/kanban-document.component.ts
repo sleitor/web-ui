@@ -45,7 +45,9 @@ import {KanbanColumnSortingLayout} from '../../../../shared/utils/layout/kanban-
 })
 export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy {
 
-  @HostListener('focusout')
+  private static columns: any[] = [];
+
+    @HostListener('focusout')
   public onFocusOut(): void {
     if (this.shouldSuggestDeletion()) {
       this.confirmDeletion();
@@ -160,8 +162,9 @@ export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy
         this.kanbanColumnLayoutConfig,
         // this.sortByOrder,
         'li',
-         this.zone,
-         this.element
+        this.zone,
+        this.element,
+        KanbanDocumentComponent.columns
       );
   }
 

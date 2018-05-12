@@ -28,9 +28,10 @@ export class KanbanColumnSortingLayout extends KanbanColumnLayout {
                 // sortFunction: (item: any, element: HTMLElement) => number,
                 selectorOfDraggableElements: string,
                 zone: NgZone,
-                element: ElementRef) {
+                element: ElementRef,
+                columns: any[]) {
 
-    super(containerClassName, parameters, zone, element);
+    super(containerClassName, parameters, zone, element, columns);
     this.setSortingParameters(selectorOfDraggableElements);
   }
 

@@ -64,6 +64,8 @@ export class KanbanColumnLayoutConfig {
 
   public dragEnabled = true;
 
+  public dataSort: () => any[];
+
   public dragContainer: HTMLElement = null;
 
   public dragStartPredicate: { distance: number, delay: number, handle: boolean | string } =
