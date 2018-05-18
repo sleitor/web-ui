@@ -75,7 +75,7 @@ export class KanbanLayoutConfig {
 
   public dragAxis: Axis = null;
 
-  public dragSort = true;
+  public dragSort: any = true;
 
   public dragSortInterval = 200;
 

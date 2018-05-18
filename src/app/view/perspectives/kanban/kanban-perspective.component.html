@@ -7,23 +7,27 @@
       (createKanban)="createKanban($event)">
     </add-document>
   </div>
+  <div class="board">
+    <kanban-column></kanban-column>
+    <div class="kanban-document-layout">
+      <kanban-document *ngFor="let kanban of kanbans; let idx = index; trackBy:trackByDocument"
+                       class="layout-item card kanban {{ !kanban.initialized ? 'uninitialized' : 'initialized' }}"
+                       [attr.order]="kanban.order"
+                       [kanbanModel]="kanbanWithIndex(kanban, idx)"
+                       [perspectiveId]="perspectiveId"
+                       [layoutManager]="layoutManager"
+                       [selectionHelper]="selectionHelper"
+                       [navigationHelper]="navigationHelper"
+                       (removed)="deleteKanban(kanban)"
+                       (changes)="kanbanChanged(kanban)"></kanban-document>
 
-  <div class="kanban-document-layout">
-    <kanban-document *ngFor="let kanban of kanbans; let idx = index; trackBy:trackByDocument"
-                      class="layout-item card kanban {{ !kanban.initialized ? 'uninitialized' : 'initialized' }}"
-                      [attr.order]="kanban.order"
-                      [kanbanModel]="kanbanWithIndex(kanban, idx)"
-                      [perspectiveId]="perspectiveId"
-                      [layoutManager]="layoutManager"
-                      [selectionHelper]="selectionHelper"
-                      [navigationHelper]="navigationHelper"
-                      (removed)="deleteKanban(kanban)"
-                      (changes)="kanbanChanged(kanban)"></kanban-document>
-
-    <label *ngIf="(!hasSingleCollection() || !hasCreateRights()) && !kanbans.length"
-           class="label-centered"
-           i18n="@@document.list.empty">Nothing To Show</label>
+    </div>
+    <div class="kanban-document-layout"></div>
+    <div class="kanban-document-layout"></div>
   </div>
+  <label *ngIf="(!hasSingleCollection() || !hasCreateRights()) && !kanbans.length"
+         class="label-centered"
+         i18n="@@document.list.empty">Nothing To Show</label>
 </div>
 
 <div class="fading loading-text text-center py-5"

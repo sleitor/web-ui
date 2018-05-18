@@ -3,10 +3,22 @@
 :host {
   display: block;
 
+  .board {
+    display: flex;
+    flex-direction: row;
+    min-height: 100px;
+  }
+
   .kanban-document-layout {
     transition: height $animation-duration;
     position: relative;
     margin: 0 auto;
+    min-width: 20px;
+    border: 1px solid black;
+    width: 33%;
+    min-height: 250px;
+
+
   }
 
   .layout-item {

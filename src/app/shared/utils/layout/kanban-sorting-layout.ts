@@ -17,7 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {NgZone} from '@angular/core';
+import {ElementRef, NgZone} from '@angular/core';
 import {KanbanLayout} from './kanban-layout';
 import {KanbanLayoutConfig} from './kanban-layout-config';
 
@@ -27,9 +27,11 @@ export class KanbanSortingLayout extends KanbanLayout {
               parameters: KanbanLayoutConfig,
               sortFunction: (item: any, element: HTMLElement) => number,
               selectorOfDraggableElements: string,
-              zone: NgZone) {
+              zone: NgZone,
+              element: ElementRef,
+              columns: any[]) {
 
-    super(containerClassName, parameters, zone);
+    super(containerClassName, parameters, zone, element, columns);
     this.setSortingParameters(selectorOfDraggableElements, sortFunction);
   }
 

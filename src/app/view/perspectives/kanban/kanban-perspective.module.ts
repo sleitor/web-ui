@@ -24,6 +24,7 @@ import {SharedModule} from '../../../shared/shared.module';
 import {KanbanPerspectiveComponent} from './kanban-perspective.component';
 import {KanbanAddDocumentComponent} from './add-document/add-document.component';
 import {KanbanDocumentComponent} from './document/kanban-document.component';
+import { KanbanColumnComponent } from './kanban-column/kanban-column.component';
 
 @NgModule({
   imports: [
@@ -33,7 +34,8 @@ import {KanbanDocumentComponent} from './document/kanban-document.component';
   declarations: [
     KanbanAddDocumentComponent,
     KanbanDocumentComponent,
-    KanbanPerspectiveComponent
+    KanbanPerspectiveComponent,
+    KanbanColumnComponent
   ],
   entryComponents: [
     KanbanPerspectiveComponent

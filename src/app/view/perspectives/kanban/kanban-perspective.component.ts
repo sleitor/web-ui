@@ -42,6 +42,7 @@ import {Permission} from '../../../core/dto';
 import {Role} from '../../../core/model/role';
 import Create = DocumentsAction.Create;
 import UpdateData = DocumentsAction.UpdateData;
+import {KanbanDocumentComponent} from './document/kanban-document.component';
 
 @Component({
   selector: 'kanban-perspective',
@@ -51,6 +52,7 @@ import UpdateData = DocumentsAction.UpdateData;
 export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
 
   private _useOwnScrollbar = false;
+  private static columns: any[] = [];
 
   @HostListener('document:keydown', ['$event'])
   public onKeyboardClick(event: KeyboardEvent) {
@@ -118,7 +120,10 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
       new KanbanLayoutConfig(),
       this.sortByOrder,
       '.kanban-document-header',
-      this.zone
+      this.zone,
+      this.element,
+      KanbanPerspectiveComponent.columns
+
     );
 
     this.infiniteScroll = new InfiniteScroll(
