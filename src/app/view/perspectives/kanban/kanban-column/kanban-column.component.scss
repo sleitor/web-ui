@@ -1,0 +1,15 @@
+@import "../../../../shared/variables";
+
+:host {
+  width: 33%;
+
+
+  .kanban-document-layout {
+    transition: height $animation-duration;
+    position: relative;
+    margin: 0 auto;
+    min-width: 20px;
+    border: 1px solid black;
+    min-height: 250px;
+  }
+}
