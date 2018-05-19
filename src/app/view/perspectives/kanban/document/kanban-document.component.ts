@@ -34,9 +34,6 @@ import {AttributeModel} from '../../../../core/store/collections/collection.mode
 import DeleteConfirm = DocumentsAction.DeleteConfirm;
 import Update = DocumentsAction.Update;
 import {KanbanLayout} from '../../../../shared/utils/layout/kanban-layout';
-import {KanbanColumnLayout} from '../../../../shared/utils/layout/kanban-column-layout';
-import {KanbanColumnLayoutConfig} from '../../../../shared/utils/layout/kanban-column-layout-config';
-import {KanbanColumnSortingLayout} from '../../../../shared/utils/layout/kanban-column-sorting-layout';
 
 @Component({
   selector: 'kanban-document',
@@ -44,8 +41,6 @@ import {KanbanColumnSortingLayout} from '../../../../shared/utils/layout/kanban-
   styleUrls: ['./kanban-document.component.scss']
 })
 export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy {
-
-  private static columns: any[] = [];
 
     @HostListener('focusout')
   public onFocusOut(): void {
@@ -110,9 +105,6 @@ export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   public layoutManager: KanbanLayout;
 
   @Input()
-  public columnLayoutManager: KanbanColumnLayout;
-
-  @Input()
   public navigationHelper: NavigationHelper;
 
   @Input()
@@ -138,7 +130,6 @@ export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy
               private element: ElementRef) {
   }
 
-  private kanbanColumnLayoutConfig = new KanbanColumnLayoutConfig();
   public ngOnInit(): void {
     this.disableScrollOnNavigation();
   }
@@ -156,16 +147,6 @@ export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
   public ngAfterViewInit(): void {
     this.layoutManager.add(this.element.nativeElement);
-    this.columnLayoutManager =
-      new KanbanColumnSortingLayout(
-        '.kanban-column-layout',
-        this.kanbanColumnLayoutConfig,
-        // this.sortByOrder,
-        'li',
-        this.zone,
-        this.element,
-        KanbanDocumentComponent.columns
-      );
   }
 
     public clickOnAttributePair(column: number, row: number): void {

@@ -8,22 +8,22 @@
     </add-document>
   </div>
   <div class="board">
-    <kanban-column></kanban-column>
-    <div class="kanban-document-layout">
-      <kanban-document *ngFor="let kanban of kanbans; let idx = index; trackBy:trackByDocument"
-                       class="layout-item card kanban {{ !kanban.initialized ? 'uninitialized' : 'initialized' }}"
-                       [attr.order]="kanban.order"
-                       [kanbanModel]="kanbanWithIndex(kanban, idx)"
-                       [perspectiveId]="perspectiveId"
-                       [layoutManager]="layoutManager"
-                       [selectionHelper]="selectionHelper"
-                       [navigationHelper]="navigationHelper"
-                       (removed)="deleteKanban(kanban)"
-                       (changes)="kanbanChanged(kanban)"></kanban-document>
+    <kanban-column [id]="1"></kanban-column>
+    <kanban-column [id]="2"></kanban-column>
+    <kanban-column [id]="3"></kanban-column>
 
-    </div>
-    <div class="kanban-document-layout"></div>
-    <div class="kanban-document-layout"></div>
+    <kanban-document *ngFor="let kanban of kanbans; let idx = index; trackBy:trackByDocument"
+                     class="layout-item card kanban {{ !kanban.initialized ? 'uninitialized' : 'initialized' }}"
+                     [attr.order]="kanban.order"
+                     [kanbanModel]="kanbanWithIndex(kanban, idx)"
+                     [perspectiveId]="perspectiveId"
+                     [layoutManager]="layoutManager"
+                     [selectionHelper]="selectionHelper"
+                     [navigationHelper]="navigationHelper"
+                     (removed)="deleteKanban(kanban)"
+                     (changes)="kanbanChanged(kanban)"></kanban-document>
+
+
   </div>
   <label *ngIf="(!hasSingleCollection() || !hasCreateRights()) && !kanbans.length"
          class="label-centered"
