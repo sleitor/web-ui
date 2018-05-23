@@ -33,7 +33,7 @@ import {SelectionHelper} from '../util/selection-helper';
 import {AttributeModel} from '../../../../core/store/collections/collection.model';
 import DeleteConfirm = DocumentsAction.DeleteConfirm;
 import Update = DocumentsAction.Update;
-import {KanbanLayout} from '../../../../shared/utils/layout/kanban-layout';
+import {KanbanColumnLayout} from '../../../../shared/utils/layout/kanban-column-layout';
 
 @Component({
   selector: 'kanban-document',
@@ -102,7 +102,7 @@ export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   public perspectiveId: string;
 
   @Input()
-  public layoutManager: KanbanLayout;
+  private currentColumnLayoutManager: KanbanColumnLayout;
 
   @Input()
   public navigationHelper: NavigationHelper;
@@ -146,7 +146,7 @@ export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   public ngAfterViewInit(): void {
-    this.layoutManager.add(this.element.nativeElement);
+    this.currentColumnLayoutManager.add(this.element.nativeElement);
   }
 
     public clickOnAttributePair(column: number, row: number): void {
@@ -279,7 +279,7 @@ export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   public ngOnDestroy(): void {
-    this.layoutManager.remove(this.element.nativeElement);
+    this.currentColumnLayoutManager.remove(this.element.nativeElement);
   }
 
 }

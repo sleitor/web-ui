@@ -17,7 +17,7 @@
                      [attr.order]="kanban.order"
                      [kanbanModel]="kanbanWithIndex(kanban, idx)"
                      [perspectiveId]="perspectiveId"
-                     [layoutManager]="layoutManager"
+                     [currentColumnLayoutManager]="getKanbanColumn(idx)"
                      [selectionHelper]="selectionHelper"
                      [navigationHelper]="navigationHelper"
                      (removed)="deleteKanban(kanban)"

@@ -3,6 +3,9 @@
 :host {
   width: 33%;
 
+  h5 {
+    text-align: center;
+  }
 
   .kanban-document-layout {
     transition: height $animation-duration;

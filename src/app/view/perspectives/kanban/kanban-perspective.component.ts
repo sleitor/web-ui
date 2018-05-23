@@ -26,9 +26,7 @@ import {DocumentModel} from '../../../core/store/documents/document.model';
 import {DocumentsAction} from '../../../core/store/documents/documents.action';
 import {selectDocumentsByCustomQuery} from '../../../core/store/documents/documents.state';
 import {QueryModel} from '../../../core/store/navigation/query.model';
-import {KanbanLayout} from '../../../shared/utils/layout/kanban-layout';
-import {KanbanLayoutConfig} from '../../../shared/utils/layout/kanban-layout-config';
-import {KanbanSortingLayout} from '../../../shared/utils/layout/kanban-sorting-layout';
+import {KanbanColumnLayout} from '../../../shared/utils/layout/kanban-column-layout';
 import {KanbanDocumentModel} from './document-data/kanban-document-model';
 import {DeletionHelper} from './util/deletion-helper';
 import {InfiniteScroll} from './util/infinite-scroll';
@@ -99,7 +97,8 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
 
   private deletionHelper: DeletionHelper;
 
-  private layoutManager: KanbanLayout;
+  // public static layoutManagers: KanbanLayout[] = [];
+  public static columnLayoutManagers: KanbanColumnLayout[] = [];
 
   private pageSubscriptions: Subscription[] = [];
 
@@ -115,16 +114,6 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
   }
 
   public ngOnInit(): void {
-    this.layoutManager = new KanbanSortingLayout(
-      '.kanban-document-layout',
-      new KanbanLayoutConfig(),
-      this.sortByOrder,
-      'kanban-document',
-      this.zone,
-      this.element,
-      KanbanPerspectiveComponent.documents
-
-    );
 
     this.infiniteScroll = new InfiniteScroll(
       () => this.loadMoreOnInfiniteScroll(),
@@ -258,7 +247,7 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
       this.focusNewDocumentIfPresent(documents);
 
       this.infiniteScroll.finishLoading();
-      this.layoutManager.refresh();
+      KanbanPerspectiveComponent.columnLayoutManagers.forEach(clM => clM.refresh());
     });
   }
 
@@ -336,6 +325,11 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
   public kanbanWithIndex(kanban: KanbanDocumentModel, index: number): KanbanDocumentModel {
     kanban.index = index;
     return kanban;
+  }
+
+  // this is stub For test for check column
+  public getKanbanColumn(idx) {
+    return KanbanPerspectiveComponent.columnLayoutManagers[idx];
   }
 
   private documentsPerRow(): number {
