@@ -17,14 +17,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {CollectionModel} from '../collections/collection.model';
-
 export interface DocumentModel {
 
   id?: string;
   collectionId: string;
-  collection?: CollectionModel;
   data: { [attributeId: string]: any };
+  newData?: { [attributeName: string]: {value: any, correlationId?: string} };
 
   favorite?: boolean;
 
@@ -36,4 +34,10 @@ export interface DocumentModel {
 
   correlationId?: string;
 
+}
+
+export interface DocumentDataModel {
+  attributeId?: string,
+  name?: string,
+  value?: any
 }

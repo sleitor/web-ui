@@ -18,7 +18,8 @@
  */
 
 import {Action} from '@ngrx/store';
-import {UserModel} from './user.model';
+import {DefaultWorkspaceModel, UserModel} from './user.model';
+import {SizeType} from '../../../shared/slider/size-type';
 
 export enum UsersActionType {
 
@@ -28,6 +29,8 @@ export enum UsersActionType {
 
   GET_CURRENT_USER = '[Users] Get current user',
   GET_CURRENT_USER_SUCCESS = '[Users] Get current user:: Success',
+
+  SAVE_DEFAULT_WORKSPACE = '[Users] Save default workspace',
 
   CREATE = '[Users] Create',
   CREATE_SUCCESS = '[Users] Create :: Success',
@@ -72,6 +75,13 @@ export namespace UsersAction {
     }
   }
 
+  export class SaveDefaultWorkspace implements Action {
+    public readonly type = UsersActionType.SAVE_DEFAULT_WORKSPACE;
+
+    public constructor(public payload: { defaultWorkspace: DefaultWorkspaceModel }) {
+    }
+  }
+
   export class GetFailure implements Action {
     public readonly type = UsersActionType.GET_FAILURE;
 
@@ -96,7 +106,7 @@ export namespace UsersAction {
   export class CreateFailure implements Action {
     public readonly type = UsersActionType.CREATE_FAILURE;
 
-    public constructor(public payload: { error: any }) {
+    public constructor(public payload: { error: any , organizationId: string}) {
     }
   }
 
@@ -153,5 +163,6 @@ export namespace UsersAction {
     GetCurrentUser | GetCurrentUserSuccess |
     Create | CreateSuccess | CreateFailure |
     Update | UpdateSuccess | UpdateFailure |
+    SaveDefaultWorkspace |
     Delete | DeleteSuccess | DeleteFailure | Clear;
 }

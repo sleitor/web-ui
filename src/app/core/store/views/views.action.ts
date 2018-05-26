@@ -21,7 +21,7 @@ import {Action} from '@ngrx/store';
 import {QueryModel} from '../navigation/query.model';
 import {SmartDocModel} from '../smartdoc/smartdoc.model';
 import {TableConfig} from '../tables/table.model';
-import {KanbanConfigModel, PostItConfigModel, SearchConfigModel, TableConfigModel, ViewConfigModel, ViewModel} from './view.model';
+import {KanbanConfigModel, DetailConfigModel, PostItConfigModel, SearchConfigModel, TableConfigModel, ViewConfigModel, ViewModel} from './view.model';
 
 export enum ViewsActionType {
 
@@ -39,6 +39,7 @@ export enum ViewsActionType {
   UPDATE_FAILURE = '[Views] Update :: Failure',
 
   CHANGE_CONFIG = '[Views] Change Config',
+  CHANGE_DETAIL_CONFIG = '[Views] Change Detail Config',
   CHANGE_POSTIT_CONFIG = '[Views] Change Post-it Config',
   CHANGE_KANBAN_CONFIG = '[Views] Change Kanban Config',
   CHANGE_SEARCH_CONFIG = '[Views] Change Search Config',
@@ -129,6 +130,13 @@ export namespace ViewsAction {
     }
   }
 
+  export class ChangeDetailConfig implements Action {
+    public readonly type = ViewsActionType.CHANGE_DETAIL_CONFIG;
+
+    public constructor(public payload: { config: DetailConfigModel }) {
+    }
+  }
+
   export class ChangePostItConfig implements Action {
     public readonly type = ViewsActionType.CHANGE_POSTIT_CONFIG;
 
@@ -181,7 +189,7 @@ export namespace ViewsAction {
   export type All = GetByCode | GetSuccess | GetFailure |
     Create | CreateSuccess | CreateFailure |
     Update | UpdateSuccess | UpdateFailure |
-    ChangeConfig | ChangePostItConfig | ChangeKanbanConfig | ChangeSearchConfig | ChangeSmartDocConfig | ChangeTableConfig | ChangeTable2Config |
+    ChangeConfig | ChangeDetailConfig | ChangePostItConfig | ChangeKanbanConfig | ChangeSearchConfig | ChangeSmartDocConfig | ChangeTableConfig | ChangeTable2Config |
     Clear;
 
 }

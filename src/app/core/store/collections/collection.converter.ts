@@ -17,8 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {Attribute} from '../../dto/attribute';
-import {Collection} from '../../dto/collection';
+import {Attribute, Collection} from '../../dto';
 import {PermissionsConverter} from '../permissions/permissions.converter';
 import {AttributeModel, CollectionModel} from './collection.model';
 
@@ -32,22 +31,16 @@ export class CollectionConverter {
       description: dto.description,
       color: dto.color,
       icon: dto.icon,
-      attributes: dto.attributes ? dto.attributes.map(CollectionConverter.fromAttributeDto) : [],
-      defaultAttributeId: dto.defaultAttribute ? dto.defaultAttribute.fullName : null,
+      attributes: dto.attributes ? dto.attributes.map(attr => CollectionConverter.fromAttributeDto(attr)) : [],
+      defaultAttributeId: dto.defaultAttributeId,
       permissions: dto.permissions ? PermissionsConverter.fromDto(dto.permissions) : null,
       documentsCount: dto.documentsCount,
       correlationId: correlationId,
-      favourite: dto.favorite
+      favorite: dto.favorite
     };
   }
 
   public static toDto(model: CollectionModel): Collection {
-    let defaultAttribute = null;
-    if (model.attributes) {
-      const modelDefaultAttribute = model.attributes.find(attr => attr.id === model.defaultAttributeId);
-      defaultAttribute = modelDefaultAttribute || null;
-    }
-
     return {
       id: model.id,
       code: model.code,
@@ -56,26 +49,27 @@ export class CollectionConverter {
       color: model.color,
       icon: model.icon,
       attributes: model.attributes ? model.attributes.map(CollectionConverter.toAttributeDto) : [],
-      defaultAttribute: defaultAttribute,
+      defaultAttributeId: model.defaultAttributeId,
       permissions: model.permissions ? PermissionsConverter.toDto(model.permissions) : null,
       documentsCount: model.documentsCount, // TODO maybe not needed this way
-      favorite: model.favourite
+      favorite: model.favorite
     };
   }
 
-  public static fromAttributeDto(attributeDto: Attribute): AttributeModel {
+  public static fromAttributeDto(attributeDto: Attribute, correlationId?: string): AttributeModel {
     return {
-      id: attributeDto.fullName,
+      id: attributeDto.id,
       name: attributeDto.name,
       // TODO convert 'intermediate' as well
       constraints: attributeDto.constraints,
-      usageCount: attributeDto.usageCount
+      usageCount: attributeDto.usageCount,
+      correlationId: correlationId
     };
   }
 
   public static toAttributeDto(attributeModel: AttributeModel): Attribute {
     return {
-      fullName: attributeModel.id,
+      id: attributeModel.id,
       name: attributeModel.name,
       // TODO convert 'intermediate' as well
       constraints: attributeModel.constraints,

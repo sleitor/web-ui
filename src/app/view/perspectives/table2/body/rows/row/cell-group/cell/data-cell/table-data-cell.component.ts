@@ -17,28 +17,32 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {Component, ElementRef, Input, OnInit, ViewChild} from '@angular/core';
+import {ChangeDetectionStrategy, Component, Input, OnChanges, SimpleChanges, ViewChild} from '@angular/core';
+import {Actions} from '@ngrx/effects';
 import {Store} from '@ngrx/store';
 import {Observable} from 'rxjs/Observable';
-import {map} from 'rxjs/operators';
+import {Subscription} from 'rxjs/Subscription';
 import {AppState} from '../../../../../../../../../core/store/app.state';
+import {AttributeModel} from '../../../../../../../../../core/store/collections/collection.model';
+import {CollectionsAction} from '../../../../../../../../../core/store/collections/collections.action';
 import {DocumentModel} from '../../../../../../../../../core/store/documents/document.model';
 import {DocumentsAction} from '../../../../../../../../../core/store/documents/documents.action';
 import {LinkInstanceModel} from '../../../../../../../../../core/store/link-instances/link-instance.model';
 import {LinkInstancesAction} from '../../../../../../../../../core/store/link-instances/link-instances.action';
-import {TableBodyCursor} from '../../../../../../../../../core/store/tables/table-cursor';
-import {EMPTY_TABLE_ROW, TableModel, TableRow, TableSingleColumn} from '../../../../../../../../../core/store/tables/table.model';
+import {findTableColumnWithCursor, TableBodyCursor} from '../../../../../../../../../core/store/tables/table-cursor';
+import {EMPTY_TABLE_ROW, TableCompoundColumn, TableModel, TableRow, TableSingleColumn} from '../../../../../../../../../core/store/tables/table.model';
 import {findTableRow, splitRowPath} from '../../../../../../../../../core/store/tables/table.utils';
-import {TablesAction} from '../../../../../../../../../core/store/tables/tables.action';
-import {selectEditedAttribute} from '../../../../../../../../../core/store/tables/tables.state';
+import {TablesAction, TablesActionType} from '../../../../../../../../../core/store/tables/tables.action';
+import {selectAffected} from '../../../../../../../../../core/store/tables/tables.state';
 import {TableColumnContextMenuComponent} from '../../../../../../header/column-group/single-column/context-menu/table-column-context-menu.component';
 import {TableEditableCellComponent} from '../../../../../../shared/editable-cell/table-editable-cell.component';
 
 @Component({
   selector: 'table-data-cell',
-  templateUrl: './table-data-cell.component.html'
+  templateUrl: './table-data-cell.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class TableDataCellComponent implements OnInit {
+export class TableDataCellComponent implements OnChanges {
 
   @Input()
   public cursor: TableBodyCursor;
@@ -66,28 +70,52 @@ export class TableDataCellComponent implements OnInit {
 
   public affected$: Observable<boolean>;
 
+  private editSubscription: Subscription;
+
   private linkCreated: boolean;
   private editedValue: string;
 
-  public constructor(private store: Store<AppState>) {
+  public value: string;
+
+  public constructor(private actions$: Actions,
+                     private store: Store<AppState>) {
   }
 
-  public ngOnInit() {
-    this.affected$ = this.store.select(selectEditedAttribute).pipe(
-      map(editedAttribute => editedAttribute &&
-        editedAttribute.documentId === this.document.id &&
-        editedAttribute.attributeId === this.column.attributeId
-      )
-    );
-  }
-
-  public value(): string {
-    const attributeId = this.column.attributeId;
-    if (this.document) {
-      return this.document.data[attributeId] || '';
+  public ngOnChanges(changes: SimpleChanges) {
+    if (changes.document || changes.linkInstance || changes.column) {
+      this.value = this.extractValue();
+      if (this.cursor && this.cursor.partIndex > 0) {
+        this.affected$ = this.store.select(selectAffected({
+          documentId: this.document.id,
+          attributeId: this.column.attributeId
+        }));
+      }
     }
-    if (this.linkInstance) {
-      return this.linkInstance.data[attributeId] || '';
+    if (changes.selected) {
+      this.bindOrUnbindEditSelectedCell();
+    }
+  }
+
+  private bindOrUnbindEditSelectedCell() {
+    if (this.selected) {
+      this.editSubscription = this.actions$.ofType<TablesAction.EditSelectedCell>(TablesActionType.EDIT_SELECTED_CELL)
+        .subscribe(action => {
+          this.editableCellComponent.startEditing(action.payload.letter);
+        });
+    } else {
+      if (this.editSubscription) {
+        this.editSubscription.unsubscribe();
+      }
+    }
+  }
+
+  public extractValue(): string {
+    const attributeId = this.column.attributeId;
+    if (this.document && this.document.data) {
+      return this.document.data[attributeId];
+    }
+    if (this.linkInstance && this.linkInstance.data) {
+      return this.linkInstance.data[attributeId];
     }
   }
 
@@ -118,34 +146,57 @@ export class TableDataCellComponent implements OnInit {
   }
 
   private saveData(value: string) {
-    if (this.linkCreated || this.value() === value) {
+    if (this.linkCreated || this.value === value) {
       return;
     }
 
     if (this.document) {
-      this.updateDocumentData(this.column.attributeId, value);
+      this.updateDocumentData(this.column.attributeId, this.column.attributeName, value);
     }
     if (this.linkInstance) {
-      this.updateLinkInstanceData(this.column.attributeId, value);
+      this.updateLinkInstanceData(this.column.attributeId, this.column.attributeName, value);
     }
   }
 
-  private updateDocumentData(key: string, value: string) {
+  private updateDocumentData(attributeId: string, attributeName: string, value: string) {
     if (this.document.id) {
-      this.updateDocument(key, value);
+      this.updateDocument(attributeId, attributeName, value);
     } else {
-      this.createDocument(key, value);
+      this.createDocument(attributeId, attributeName, value);
     }
   }
 
-  private createDocument(key: string, value: string) {
-    const data = {[key]: value};
-    const document: DocumentModel = {...this.document, data};
+  private createDocument(attributeId: string, attributeName: string, value: string) {
+    if (!attributeId) {
+      const document: DocumentModel = {...this.document, newData: {[attributeName]: {value}}};
+      const createDocumentAction = new DocumentsAction.Create({document, callback: this.createLinkInstanceCallback()});
+      const newAttribute = {name: attributeName, constraints: []};
 
-    this.store.dispatch(new DocumentsAction.Create({
-      document,
-      callback: this.createLinkInstanceCallback()
-    }));
+      this.store.dispatch(new CollectionsAction.CreateAttributes({
+        collectionId: this.document.collectionId,
+        attributes: [newAttribute],
+        nextAction: createDocumentAction,
+        callback: this.replaceTableColumnCallback(attributeName)
+      }));
+    } else {
+      const data = {[attributeId]: value};
+      const document: DocumentModel = {...this.document, data: data};
+
+      this.store.dispatch(new DocumentsAction.Create({document, callback: this.createLinkInstanceCallback()}));
+    }
+  }
+
+  private replaceTableColumnCallback(attributeName: string): (attributes: AttributeModel[]) => void {
+    const {column, cursor} = findTableColumnWithCursor(this.table, this.cursor.partIndex, attributeName);
+
+    return attributes => {
+      const attribute = attributes.find(attribute => attribute.name === attributeName);
+      if (attribute) {
+        const parent: TableSingleColumn = new TableSingleColumn(attribute.id, null, column.parent.width);
+        const columns = [new TableCompoundColumn(parent, [])];
+        this.store.dispatch(new TablesAction.ReplaceColumns({cursor, deleteCount: 1, columns}));
+      }
+    };
   }
 
   private createLinkInstanceCallback(): (documentId: string) => void {
@@ -178,25 +229,26 @@ export class TableDataCellComponent implements OnInit {
     };
   }
 
-  private updateDocument(key: string, value: string) {
-    const data = {[key]: value};
-    this.store.dispatch(new DocumentsAction.PatchData({
-      collectionId: this.document.collectionId,
-      documentId: this.document.id,
-      data
-    }));
+  private updateDocument(attributeId: string, attributeName: string, value: string) {
+    if (!attributeId) {
+      const document = {collectionId: this.document.collectionId, id: this.document.id, data: {}, newData: {[attributeName]: {value}}};
+      const patchDocumentAction = new DocumentsAction.PatchData({document});
+      const newAttribute = {name: attributeName, constraints: []};
+
+      this.store.dispatch(new CollectionsAction.CreateAttributes({
+        collectionId: this.document.collectionId,
+        attributes: [newAttribute],
+        nextAction: patchDocumentAction,
+        callback: this.replaceTableColumnCallback(attributeName)
+      }));
+    } else {
+      const document = {collectionId: this.document.collectionId, id: this.document.id, data: {[attributeId]: value}};
+      this.store.dispatch(new DocumentsAction.PatchData({document}));
+    }
   }
 
-  private updateLinkInstanceData(key: string, value: string) {
+  private updateLinkInstanceData(key: string, name: string, value: string) {
     // TODO dispatch patch link instance action
-  }
-
-  public contextMenuElement(): ElementRef {
-    return this.contextMenuComponent ? this.contextMenuComponent.contextMenu : null;
-  }
-
-  public isCreated(): boolean {
-    return !!(this.document && this.document.id) || !!(this.linkInstance && this.linkInstance.id);
   }
 
   public onEdit() {
@@ -235,10 +287,6 @@ export class TableDataCellComponent implements OnInit {
     // TODO what is 'this' if the component is destroyed in the meantime?
     const callback = () => this.store.dispatch(new TablesAction.RemoveRow({cursor: this.cursor}));
     this.store.dispatch(new LinkInstancesAction.DeleteConfirm({linkInstanceId, callback}));
-  }
-
-  public suggestionsEnabled(): boolean {
-    return this.cursor.partIndex > 0 && this.document && !this.isCreated() && this.editableCellComponent.edited;
   }
 
   public onCreateLink(document: DocumentModel) {

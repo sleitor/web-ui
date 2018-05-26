@@ -22,25 +22,22 @@ import {NgModule} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {RouterModule} from '@angular/router';
 import {CommentsComponent} from './comments/comments.component';
-import {DialogsModule} from './dialogs/dialogs.module';
 import {DragAndDropModule} from './drag-and-drop/drag-and-drop.module';
-import {LinksComponent} from './links/links.component';
-
+import {InputModule} from './input/input.module';
 import {PerspectiveDirective} from './perspective.directive';
 import {PickerModule} from './picker/picker.module';
-import {PostItCollectionsComponent} from './post-it-collections/post-it-collections.component';
+import {PipesModule} from './pipes/pipes.module';
+import {RemovePlaceholderOnFocusDirective} from './placeholder/remove-placeholder-on-focus';
+import {PostItCollectionsModule} from './post-it-collections/post-it-collections.module';
+import {ResourceHeaderComponent} from './resource/header/resource-header.component';
 import {SearchBoxModule} from './search-box/search-box.module';
 import {SizeSliderComponent} from './slider/size-slider.component';
-import {LayoutItem} from './utils/layout/layout-item.directive';
-import {PostItCollectionNameComponent} from './post-it-collections/collection-name/post-it-collection-name.component';
-import {RemovePlaceholderOnFocusDirective} from './placeholder/remove-placeholder-on-focus';
-import {PostItCollectionAddButtonComponent} from './post-it-collections/add-button/post-it-collection-add-button.component';
-import {PostItCollectionImportButtonComponent} from './post-it-collections/import-button/post-it-collection-import-button.component';
 import {SliderComponent} from './slider/slider.component';
 import {UsersModule} from "./users/users.module";
 import {TagModule} from "./tag/tag.module";
-import {InputModule} from "./input/input.module";
-import {ResourceHeaderComponent} from './resource/header/resource-header.component';
+import {DocumentModule} from "./document/document.module";
+import {PreviewResultsModule} from "./preview-results/preview-results.module";
+import {LinksModule} from "./links/links.module";
 
 @NgModule({
   imports: [
@@ -51,42 +48,41 @@ import {ResourceHeaderComponent} from './resource/header/resource-header.compone
     DragAndDropModule,
     SearchBoxModule,
     UsersModule,
-    DialogsModule,
     TagModule,
-    InputModule
+    InputModule,
+    PostItCollectionsModule,
+    DocumentModule,
+    PreviewResultsModule,
+    LinksModule,
+    PipesModule
   ],
   declarations: [
-    PostItCollectionsComponent,
-    PostItCollectionNameComponent,
-    PostItCollectionAddButtonComponent,
-    PostItCollectionImportButtonComponent,
     SizeSliderComponent,
     CommentsComponent,
-    LinksComponent,
     PerspectiveDirective,
     RemovePlaceholderOnFocusDirective,
-    LayoutItem,
     SliderComponent,
-    LayoutItem,
-    ResourceHeaderComponent
+    ResourceHeaderComponent,
   ],
   exports: [
     CommonModule,
     DragAndDropModule,
     FormsModule,
-    PostItCollectionsComponent,
+    PostItCollectionsModule,
     SizeSliderComponent,
     CommentsComponent,
-    LinksComponent,
     PerspectiveDirective,
     RemovePlaceholderOnFocusDirective,
     UsersModule,
     SearchBoxModule,
     SliderComponent,
+    PipesModule,
     TagModule,
     InputModule,
-    DialogsModule,
-    ResourceHeaderComponent
+    ResourceHeaderComponent,
+    DocumentModule,
+    PreviewResultsModule,
+    LinksModule
   ]
 })
 export class SharedModule {

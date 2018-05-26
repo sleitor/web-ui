@@ -20,6 +20,7 @@
 export const DEFAULT_TABLE_ID = 'default';
 
 export const DEFAULT_COLUMN_WIDTH = 100;
+export const DEFAULT_ROW_NUMBER_WIDTH = 40;
 
 export interface TableModel {
 
@@ -84,6 +85,7 @@ export class TableSingleColumn implements TableColumn {
   public readonly type = TableColumnType.SINGLE;
 
   public constructor(public attributeId: string,
+                     public attributeName?: string,
                      public width: number = DEFAULT_COLUMN_WIDTH) {
   };
 

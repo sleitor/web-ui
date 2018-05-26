@@ -18,21 +18,22 @@
  */
 
 import {Injectable} from '@angular/core';
+
 import {Actions, Effect, ofType} from '@ngrx/effects';
 import {Action, Store} from '@ngrx/store';
 import {I18n} from '@ngx-translate/i18n-polyfill';
 import {Observable} from 'rxjs/Observable';
-import {catchError, filter, map, mergeMap, tap, withLatestFrom} from 'rxjs/operators';
+import {catchError, concatMap, filter, map, mergeMap, tap, withLatestFrom} from 'rxjs/operators';
 import {UserService} from '../../rest';
 import {NotificationsAction} from '../notifications/notifications.action';
-import {UserConverter} from './user.converter';
+import {DefaultWorkspaceConverter, UserConverter} from './user.converter';
 import {UsersAction, UsersActionType} from './users.action';
 import {AppState} from "../app.state";
 import {GlobalService} from '../../rest/global.service';
 import {selectUsersLoadedForOrganization} from './users.state';
 import {HttpErrorResponse} from "@angular/common/http";
 import {RouterAction} from "../router/router.action";
-import {selectSelectedOrganization} from "../organizations/organizations.state";
+import {selectOrganizationsDictionary, selectSelectedOrganization} from "../organizations/organizations.state";
 
 @Injectable()
 export class UsersEffects {
@@ -78,7 +79,7 @@ export class UsersEffects {
       return this.userService.createUser(action.payload.organizationId, userDto).pipe(
         map(dto => UserConverter.fromDto(dto)),
         map(user => new UsersAction.CreateSuccess({user: user})),
-        catchError(error => Observable.of(new UsersAction.CreateFailure({error: error})))
+        catchError(error => Observable.of(new UsersAction.CreateFailure({error, organizationId: action.payload.organizationId})))
       );
     }),
   );
@@ -87,19 +88,21 @@ export class UsersEffects {
   public createFailure$: Observable<Action> = this.actions$.pipe(
     ofType<UsersAction.CreateFailure>(UsersActionType.CREATE_FAILURE),
     tap(action => console.error(action.payload.error)),
-    withLatestFrom(this.store$.select(selectSelectedOrganization)),
-    map(([action, organization]) => {
+    withLatestFrom(this.store$.select(selectOrganizationsDictionary)),
+    map(([action, organizations]) => {
+      const organization = organizations[action.payload.organizationId];
       if (action.payload.error instanceof HttpErrorResponse && action.payload.error.status == 402) {
-        const title = this.i18n({ id: 'serviceLimits.trial', value: 'Free Service' });
+        const title = this.i18n({id: 'serviceLimits.trial', value: 'Trial Service'});
         const message = this.i18n({
           id: 'user.create.serviceLimits',
-          value: 'You are currently on the Free plan which allows you to invite only three users to your organization. Do you want to upgrade to Business now?' });
+          value: 'You are currently on the Trial plan which allows you to invite only three users to your organization. Do you want to upgrade to Business now?'
+        });
         return new NotificationsAction.Confirm({
           title,
           message,
           action: new RouterAction.Go({
             path: ['/organization', organization.code, 'detail'],
-            extras: { fragment: 'orderService' }
+            extras: {fragment: 'orderService'}
           })
         });
       }
@@ -149,6 +152,18 @@ export class UsersEffects {
     map(() => {
       const message = this.i18n({id: 'user.delete.fail', value: 'Failed to delete user'});
       return new NotificationsAction.Error({message});
+    })
+  );
+
+  @Effect()
+  public saveDefaultWorkspace$ = this.actions$.pipe(
+    ofType<UsersAction.SaveDefaultWorkspace>(UsersActionType.SAVE_DEFAULT_WORKSPACE),
+    concatMap(action => {
+      const defaultWorkspaceDto = DefaultWorkspaceConverter.toDto(action.payload.defaultWorkspace);
+      return this.globalService.saveDefaultWorkspace(defaultWorkspaceDto).pipe(
+        concatMap(() => Observable.of()),
+        catchError(() => Observable.of())
+      )
     })
   );
 

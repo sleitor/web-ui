@@ -20,7 +20,6 @@
 import {Component, EventEmitter, Input, OnDestroy, OnInit, Output} from '@angular/core';
 
 import {UserModel} from '../../../core/store/users/user.model';
-import {Validator} from "../../../core/validators/validator";
 import {Role} from '../../../core/model/role';
 import {ResourceType} from '../../../core/model/resource-type';
 import {I18n} from '@ngx-translate/i18n-polyfill';
@@ -29,9 +28,10 @@ import {Subscription} from 'rxjs/Subscription';
 import {debounceTime, filter} from 'rxjs/operators';
 import {deepArrayEquals} from '../../utils/array.utils';
 import {isNullOrUndefined} from 'util';
+import {NotificationService} from '../../../core/notifications/notification.service';
 
 @Component({
-  selector: 'user',
+  selector: '[user]',
   templateUrl: './user.component.html',
   styleUrls: ['./user.component.scss']
 })
@@ -59,21 +59,20 @@ export class UserComponent implements OnInit, OnDestroy {
 
   @Output() public rolesUpdate = new EventEmitter<{ roles: string[], onlyStore: boolean }>();
 
-  public showEmailWarning: boolean;
-
-  private lastSincedUserRoles: string[];
+  private lastSyncedUserRoles: string[];
   private rolesChange$ = new Subject<string[]>();
   private rolesChangeSubscription: Subscription;
 
-  constructor(private i18n: I18n) {
+  constructor(private i18n: I18n,
+              private notificationService: NotificationService) {
   }
 
   public ngOnInit() {
     this.rolesChangeSubscription = this.rolesChange$.pipe(
-      debounceTime(1000),
-      filter(newRoles => !deepArrayEquals(newRoles, this.lastSincedUserRoles))
+      debounceTime(2000),
+      filter(newRoles => !deepArrayEquals(newRoles, this.lastSyncedUserRoles))
     ).subscribe(newRoles => {
-      this.lastSincedUserRoles = null;
+      this.lastSyncedUserRoles = null;
       this.rolesUpdate.emit({roles: newRoles, onlyStore: false});
     });
   }
@@ -82,21 +81,28 @@ export class UserComponent implements OnInit, OnDestroy {
     if (this.rolesChangeSubscription) {
       this.rolesChangeSubscription.unsubscribe();
     }
-  }
-
-  public onNewEmail(email: string) {
-    if (!Validator.validateEmail(email)) {
-      this.showEmailWarning = true;
-      return;
+    if (this.lastSyncedUserRoles && !deepArrayEquals(this.userRoles, this.lastSyncedUserRoles)) {
+      this.rolesUpdate.emit({roles: this.userRoles, onlyStore: false});
     }
-    this.userUpdated.emit({...this.user, email});
   }
 
-  public onEmailFocus() {
-    this.showEmailWarning = false;
+  public onDelete() {
+    const message = this.i18n({id: 'users.user.delete.message', value: 'User is about to be permanently deleted.'});
+    const title = this.i18n({id: 'users.user.delete.title', value: 'Delete user?'});
+    const yesButtonText = this.i18n({id: 'button.yes', value: 'Yes'});
+    const noButtonText = this.i18n({id: 'button.no', value: 'No'});
+
+    this.notificationService.confirm(
+      message,
+      title,
+      [
+        {text: yesButtonText, action: () => this.deleteUser(), bold: false},
+        {text: noButtonText}
+      ]
+    );
   }
 
-  public removeUser() {
+  public deleteUser() {
     this.userDeleted.emit(this.user);
   }
 
@@ -152,8 +158,8 @@ export class UserComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (isNullOrUndefined(this.lastSincedUserRoles)) {
-      this.lastSincedUserRoles = this.userRoles;
+    if (isNullOrUndefined(this.lastSyncedUserRoles)) {
+      this.lastSyncedUserRoles = this.userRoles;
     }
 
     let newRoles;
@@ -165,6 +171,5 @@ export class UserComponent implements OnInit, OnDestroy {
     this.rolesChange$.next(newRoles);
     this.rolesUpdate.emit({roles: newRoles, onlyStore: true});
   }
-
 
 }

@@ -42,9 +42,9 @@ export enum TablesActionType {
   SHOW_COLUMNS = '[Tables] Show Columns',
   HIDE_COLUMN = '[Tables] Hide Column',
   MOVE_COLUMN = '[Tables] Move Column',
-  RENAME_COLUMN = '[Tables] Rename Column',
   RESIZE_COLUMN = '[Tables] Resize Column',
   REMOVE_COLUMN = '[Tables] Remove Column',
+  INIT_COLUMN = '[Tables] Initialize Column',
 
   GROUP_BY_COLUMN = '[Tables] Group By Column',
   SORT_BY_COLUMN = '[Tables] Sort By Column',
@@ -63,7 +63,7 @@ export enum TablesActionType {
   EXPAND_ROWS = '[Tables] Expand Rows',
   COLLAPSE_ROWS = '[Tables] Collapse Rows',
 
-  EDIT_CELL = '[Tables] Edit Cell',
+  EDIT_SELECTED_CELL = '[Tables] Edit Selected Cell',
   COPY_CELL = '[Tables] Copy Cell',
   PASTE_CELL = '[Tables] Paste Cell',
   MOVE_CELL = '[Tables] Move Cell',
@@ -71,7 +71,7 @@ export enum TablesActionType {
   SET_CURSOR = '[Tables] Set Cursor',
   MOVE_CURSOR = '[Tables] Move Cursor',
 
-  SET_EDITED_ATTRIBUTE = '[Tables] Set Edited Document',
+  SET_EDITED_ATTRIBUTE = '[Tables] Set Edited Attribute',
 
   ADD_FUNCTION = '[Tables] Add Function',
   REMOVE_FUNCTION = '[Tables] Remove Function',
@@ -190,17 +190,17 @@ export namespace TablesAction {
     }
   }
 
-  export class RenameColumn implements Action {
-    public readonly type = TablesActionType.RENAME_COLUMN;
-
-    public constructor(public payload: { cursor: TableHeaderCursor, name: string }) {
-    }
-  }
-
   export class ResizeColumn implements Action {
     public readonly type = TablesActionType.RESIZE_COLUMN;
 
     public constructor(public payload: { cursor: TableHeaderCursor, delta: number }) {
+    }
+  }
+
+  export class InitColumn implements Action {
+    public readonly type = TablesActionType.INIT_COLUMN;
+
+    public constructor(public payload: { cursor: TableHeaderCursor, attributeId: string }) {
     }
   }
 
@@ -256,7 +256,14 @@ export namespace TablesAction {
   export class MoveCursor implements Action {
     public readonly type = TablesActionType.MOVE_CURSOR;
 
-    public constructor(public payload: { cursor: TableCursor, direction: Direction }) {
+    public constructor(public payload: { direction: Direction }) {
+    }
+  }
+
+  export class EditSelectedCell implements Action {
+    public readonly type = TablesActionType.EDIT_SELECTED_CELL;
+
+    public constructor(public payload: { letter?: string }) {
     }
   }
 
@@ -271,9 +278,9 @@ export namespace TablesAction {
     CreatePart | AddPart | SwitchParts | RemovePart |
     AddColumn | SplitColumn | ReplaceColumns | RemoveColumn |
     HideColumn | ShowColumns |
-    MoveColumn | RenameColumn | ResizeColumn |
+    MoveColumn | ResizeColumn | InitColumn |
     ReplaceRows | AddRows | AddLinkedRows | RemoveRow |
     CollapseRows | ExpandRows |
     SetCursor | MoveCursor |
-    SetEditedAttribute;
+    EditSelectedCell | SetEditedAttribute;
 }

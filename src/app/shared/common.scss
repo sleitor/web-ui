@@ -26,6 +26,10 @@ a {
   transition: color $animation-color-duration;
 }
 
+a:hover {
+  color: lighten($link-color, 5%);
+}
+
 .flex-grow-2 {
   flex-grow: 2;
 }
@@ -134,18 +138,19 @@ input {
 .clickable {
   cursor: pointer;
   color: $success;
+  transition: all .2s ease-in;
 
   &:hover {
-    color: darken($success, 20%);
+    color: lighten($success, 20%);
   }
 }
 
 .clickable-unselected {
   cursor: pointer;
-  color: $grey-color;
+  color: $grey-darker-color;
 
   &:hover {
-    color: $grey-darker-color;
+    color: $grey-color;
   }
 }
 
@@ -200,4 +205,46 @@ input {
 
 .overflow-hidden {
   overflow: hidden;
+}
+
+ul.nav-u {
+  border-bottom: 1px solid $gray-300;
+}
+
+.nav-u .nav-item.show .nav-link, .nav-u .nav-link.active {
+  color: #495057;
+  background-color: #fff;
+  border-color: $success;
+}
+
+.nav-u .nav-link {
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  border-bottom: 3px solid transparent;
+}
+
+.spectrum-container {
+  border: none;
+  border-radius: 5px;
+  background-color: white;
+  -webkit-box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.75);
+  -moz-box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.75);
+  box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.75);
+}
+
+.notice {
+  color: $gray-500;
+  font-style: italic;
+}
+
+.attribute {
+  font-size: small;
+  color: $gray-500;
+  font-style: italic;
+  font-weight: bold;
+}
+
+button {
+  box-shadow: none ! important;
 }

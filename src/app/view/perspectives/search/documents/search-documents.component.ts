@@ -36,6 +36,9 @@ import {UserSettingsService} from '../../../../core/user-settings.service';
 import {SizeType} from '../../../../shared/slider/size-type';
 import {QueryHelper} from "../../../../core/store/navigation/query.helper";
 import {QueryModel} from "../../../../core/store/navigation/query.model";
+import {CollectionModel} from '../../../../core/store/collections/collection.model';
+import {selectCollectionsByQuery} from '../../../../core/store/collections/collections.state';
+import {getDefaultAttributeId} from '../../../../core/store/collections/collection.util';
 
 @Component({
   templateUrl: './search-documents.component.html',
@@ -60,6 +63,7 @@ export class SearchDocumentsComponent implements OnInit, OnDestroy {
   public expandedDocumentIds: string[] = [];
   public loaded: boolean = false;
 
+  private collections: { [collectionId: string]: CollectionModel };
   private currentQuery: QueryModel;
   private subscriptions: Subscription = new Subscription();
 
@@ -112,11 +116,12 @@ export class SearchDocumentsComponent implements OnInit, OnDestroy {
   }
 
   public createDefaultAttributeHtml(document: DocumentModel): string {
-    const data = document.data;
-    if (isNullOrUndefined(data)) {
-      return '';
-    }
-    return this.valueHtml(Object.values(data)[0]);
+    if (isNullOrUndefined(document.data)) return '';
+
+    const defaultAttributeId = this.getDefaultAttributeId(document);
+    const value = document.data[defaultAttributeId] || '';
+
+    return this.valueHtml(value);
   }
 
   public toggleDocument(document: DocumentModel) {
@@ -143,7 +148,7 @@ export class SearchDocumentsComponent implements OnInit, OnDestroy {
       .join(', ');
   }
 
-  private getValues(document: DocumentModel): string[] {
+  private getValues(document: DocumentModel): any[] {
     if (isNullOrUndefined(document.data)) {
       return [];
     }
@@ -153,8 +158,6 @@ export class SearchDocumentsComponent implements OnInit, OnDestroy {
   private getValuesFromAny(value: any): string[] | string {
     if (isArray(value)) {
       return this.getValuesFromArray(value as any[]);
-    } else if (isObject(value)) {
-      return this.getValuesFromObject(value as Object);
     } else {
       return value as string;
     }
@@ -168,34 +171,37 @@ export class SearchDocumentsComponent implements OnInit, OnDestroy {
     return values;
   }
 
-  private getValuesFromObject(object: Object): string[] {
-    return this.getValuesFromArray(Object.values(object));
-  }
-
   public createEntriesHtml(document: DocumentModel): string {
     if (isNullOrUndefined(document.data)) {
       return '';
     }
 
-    return this.entriesHtml(Object.entries(document.data), document);
-  }
-
-  private entriesHtml(entries: [string, any][], document?: DocumentModel): string {
-    return entries
-      .map(([key, value]) => `${this.attributeHtml(key, document)}${this.valueHtml(value)}`)
+    return Object.keys(document.data)
+      .map(attributeId => `${this.attributeHtml(attributeId, document)}${this.valueHtml(document.data[attributeId])}`)
       .join(', ');
   }
 
-  private attributeHtml(attribute: string, document: DocumentModel): string {
-    return `<i class="${this.attributeHtmlClasses(attribute, document)}">${attribute}</i>: `;
+  public getAttributeName(collection: CollectionModel, attributeId: string): string {
+    const attribute = collection && collection.attributes.find(attr => attr.id === attributeId);
+    return attribute && attribute.name;
   }
 
-  private attributeHtmlClasses(attribute: string, document: DocumentModel): string {
-    return `search-documents-attribute ${this.isDefaultAttribute(attribute, document) ? 'search-documents-default-attribute' : ''}`;
+  private attributeHtml(attributeId: string, document: DocumentModel): string {
+    const collection = this.collections[document.collectionId];
+    return `<i class="${this.attributeHtmlClasses(attributeId, document)}">${this.getAttributeName(collection, attributeId)}</i>: `;
   }
 
-  private isDefaultAttribute(attributeFullName: string, document: DocumentModel): boolean {
-    return document && attributeFullName === document.collection.defaultAttributeId;
+  private attributeHtmlClasses(attributeId: string, document: DocumentModel): string {
+    return `search-documents-attribute ${this.isDefaultAttribute(attributeId, document) ? 'search-documents-default-attribute' : ''}`;
+  }
+
+  private isDefaultAttribute(attributeId: string, document: DocumentModel): boolean {
+    return attributeId === this.getDefaultAttributeId(document);
+  }
+
+  private getDefaultAttributeId(document: DocumentModel): string {
+    const collection = this.collections[document.collectionId];
+    return getDefaultAttributeId(collection);
   }
 
   private valueHtml(value: any): string {
@@ -203,8 +209,6 @@ export class SearchDocumentsComponent implements OnInit, OnDestroy {
       return '';
     } else if (isArray(value)) {
       return `[${this.arrayHtml(value as any[])}]`;
-    } else if (isObject(value)) {
-      return `{${this.entriesHtml(Object.entries(value))}}`;
     } else {
       return `<span class="search-documents-value">${value.toString()}</span>`;
     }
@@ -249,5 +253,12 @@ export class SearchDocumentsComponent implements OnInit, OnDestroy {
     this.documents$ = this.store.select(selectDocumentsByQuery).pipe(
       map(documents => documents.filter(doc => doc.id))
     );
+
+    const collectionSubscription = this.store.select(selectCollectionsByQuery)
+      .subscribe(collections => this.collections = collections.reduce((acc, coll) => {
+        acc[coll.id] = coll;
+        return acc;
+      }, {}));
+    this.subscriptions.add(collectionSubscription);
   }
 }

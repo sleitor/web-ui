@@ -33,6 +33,7 @@ export interface ViewModel extends ResourceModel {
 
 export interface ViewConfigModel {
 
+  detail?: DetailConfigModel;
   postit?: PostItConfigModel;
   kanban?: KanbanConfigModel;
   search?: SearchConfigModel;
@@ -40,6 +41,10 @@ export interface ViewConfigModel {
   table2?: TableConfig;
   smartdoc?: SmartDocModel;
 
+}
+
+export interface DetailConfigModel {
+  whateverConfig?: string;
 }
 
 export interface PostItConfigModel {
