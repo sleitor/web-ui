@@ -1,7 +1,6 @@
 <div class="mx-5" #layout>
   <div class="m-2">
     <add-document
-      [attr.order]="-10000"
       [hasCollection]="hasSingleCollection()"
       [hasRights]="hasCreateRights()"
       (createKanban)="createKanban($event)">
@@ -15,13 +14,17 @@
     <kanban-document *ngFor="let kanban of kanbans; let idx = index; trackBy:trackByDocument"
                      class="layout-item card kanban {{ !kanban.initialized ? 'uninitialized' : 'initialized' }}"
                      [attr.order]="kanban.order"
+                     [collection]="getCollection(kanban)"
+                     [collectionRoles]="getCollectionRoles(kanban)"
                      [kanbanModel]="kanbanWithIndex(kanban, idx)"
                      [perspectiveId]="perspectiveId"
+                     [layoutManager]="layoutManager"
                      [currentColumnLayoutManager]="getKanbanColumn(idx)"
                      [selectionHelper]="selectionHelper"
                      [navigationHelper]="navigationHelper"
-                     (removed)="deleteKanban(kanban)"
-                     (changes)="kanbanChanged(kanban)"></kanban-document>
+                     (favoriteChange)="onFavoriteChange(kanban.document, $event)"
+                     (remove)="removePostIt(kanban)"
+                     (changes)="postItChanged(kanban, $event)"></kanban-document>
 
 
   </div>

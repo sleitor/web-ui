@@ -17,23 +17,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, NgZone, OnDestroy, OnInit, Output, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, SimpleChanges, ViewChild} from '@angular/core';
+
 import {Store} from '@ngrx/store';
-import {isString} from 'util';
-import {Permission} from '../../../../core/dto';
-import {LumeerError} from '../../../../core/error/lumeer.error';
+import {isNullOrUndefined} from 'util';
 import {AppState} from '../../../../core/store/app.state';
-import {DocumentsAction} from '../../../../core/store/documents/documents.action';
 import {KeyCode} from '../../../../shared/key-code';
 import {Role} from '../../../../core/model/role';
-import {AttributePair} from '../document-data/attribute-pair';
+import {KanbanLayout} from '../../../../shared/utils/layout/kanban-layout';
 import {KanbanDocumentModel} from '../document-data/kanban-document-model';
 import {NavigationHelper} from '../util/navigation-helper';
 import {SelectionHelper} from '../util/selection-helper';
-import {AttributeModel} from '../../../../core/store/collections/collection.model';
-import DeleteConfirm = DocumentsAction.DeleteConfirm;
-import Update = DocumentsAction.Update;
+import {AttributeModel, CollectionModel} from '../../../../core/store/collections/collection.model';
 import {KanbanColumnLayout} from '../../../../shared/utils/layout/kanban-column-layout';
+import {DocumentModel} from '../../../../core/store/documents/document.model';
+import {Subject} from 'rxjs/Subject';
+import {Subscription} from 'rxjs/Subscription';
+import {debounceTime, filter} from 'rxjs/operators';
+import {CorrelationIdGenerator} from '../../../../core/store/correlation-id.generator';
+import {getDefaultAttributeId} from '../../../../core/store/collections/collection.util';
+import {KanbanRow} from './kanban-row';
 
 @Component({
   selector: 'kanban-document',
@@ -42,96 +45,58 @@ import {KanbanColumnLayout} from '../../../../shared/utils/layout/kanban-column-
 })
 export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy {
 
-    @HostListener('focusout')
-  public onFocusOut(): void {
-    if (this.shouldSuggestDeletion()) {
-      this.confirmDeletion();
-      this.changed = false;
-      return;
-    }
+  @Input() public kanbanModel: KanbanDocumentModel;
+  @Input() public collection: CollectionModel;
+  @Input() public collectionRoles: string[];
+  @Input() public perspectiveId: string;
+  @Input() private currentColumnLayoutManager: KanbanColumnLayout;
+  @Input() public layoutManager: KanbanLayout;
+  @Input() public navigationHelper: NavigationHelper;
+  @Input() public selectionHelper: SelectionHelper;
 
-    if (this.changed) {
-      this.checkforDuplicitAttributes();
+  @Output() public remove = new EventEmitter();
+  @Output() public changes = new EventEmitter();
+  @Output() public favoriteChange = new EventEmitter<{ favorite: boolean, onlyStore: boolean }>();
 
-      this.changed = false;
-      this.changes.emit();
-    }
-  }
+  @ViewChild('content') public content: ElementRef;
 
-  private shouldSuggestDeletion(): boolean {
-    return this.hasNoAttributes() && this.isInitialized();
-  }
+  private kanbanRows: KanbanRow[] = [];
+  private kanbanNewRow: KanbanRow = {attributeName: '', value: ''};
+  private kanbanChange$ = new Subject<any>();
+  private kanbanChangeSubscription: Subscription;
 
-  private hasNoAttributes(): boolean {
-    return this.attributePairs.length === 0;
-  }
-
-  private isInitialized(): boolean {
-    return Boolean(this.kanbanModel && this._kanbanModel.document.id);
-  }
-
-  private checkforDuplicitAttributes(): void {
-    const attributesCount = Object.keys(this.kanbanModel.document.data).length;
-    const userWrittenAttributesCount = this.attributePairs.length;
-
-    if (attributesCount !== userWrittenAttributesCount) {
-      console.warn('You added more values to single attribute, we suggest refreshing');
-    }
-  }
-
-  private _kanbanModel: KanbanDocumentModel;
-
-  @Input()
-  public get kanbanModel() {
-    return this._kanbanModel;
-  }
-
-  public set kanbanModel(value) {
-    if (!value) {
-      throw new LumeerError('Invalid internal state');
-    }
-
-    this._kanbanModel = value;
-    this.refreshDataAttributePairs();
-  }
-
-  @Input()
-    public collectionRoles: string[];
-
-  @Input()
-  public perspectiveId: string;
-
-  @Input()
-  private currentColumnLayoutManager: KanbanColumnLayout;
-
-  @Input()
-  public navigationHelper: NavigationHelper;
-
-  @Input()
-  public selectionHelper: SelectionHelper;
-
-  @Output()
-  public removed = new EventEmitter();
-
-  @Output()
-  public changes = new EventEmitter();
-
-  @ViewChild('content')
-  public content: ElementRef;
-
-  private changed: boolean;
-
-  public attributePairs: AttributePair[] = [];
-
-  public newAttributePair: AttributePair = new AttributePair();
+  private lastSyncedFavorite: boolean;
+  private favoriteChange$ = new Subject<boolean>();
+  private favoriteChangeSubscription: Subscription;
 
   constructor(private store: Store<AppState>,
-              private zone: NgZone,
               private element: ElementRef) {
+  }
+
+  public ngOnChanges(changes: SimpleChanges) {
+    if (changes.collection) {
+      this.pairAttributes();
+    }
+    if (changes.kanbanModel) {
+      this.constructRows();
+    }
+    this.kanbanModel.numRows = this.kanbanRows.length;
   }
 
   public ngOnInit(): void {
     this.disableScrollOnNavigation();
+    this.initFavoriteSubscription();
+  }
+
+  public ngOnDestroy(): void {
+    if (this.kanbanChangeSubscription) {
+      this.kanbanChangeSubscription.unsubscribe();
+    }
+    this.currentColumnLayoutManager.remove(this.element.nativeElement);
+  }
+
+  public ngAfterViewInit(): void {
+    this.currentColumnLayoutManager.add(this.element.nativeElement);
   }
 
   private disableScrollOnNavigation(): void {
@@ -145,84 +110,97 @@ export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     }, capture);
   }
 
-  public ngAfterViewInit(): void {
-    this.currentColumnLayoutManager.add(this.element.nativeElement);
+  public clickOnAttributePair(column: number, row: number): void {
+    this.selectionHelper.setEditMode(false);
+    this.selectionHelper.select(column, row, this.kanbanModel);
   }
-
-    public clickOnAttributePair(column: number, row: number): void {
-        this.selectionHelper.setEditMode(false);
-        this.selectionHelper.select(column, row, this.kanbanModel);
-    }
 
   public onEnterKeyPressedInEditMode(): void {
     this.selectionHelper.selectNext(this.kanbanModel);
   }
 
   public createAttributePair(): void {
-    this.kanbanModel.document.data[this.newAttributePair.attribute] = '';
+    const selectedAttribute = this.findAttributeByName(this.kanbanNewRow.attributeName);
 
-    this.newAttributePair.value = '';
-    this.attributePairs.push(this.newAttributePair);
+    if (selectedAttribute) {
+      if (this.isAttributeUsed(selectedAttribute.id)) {
+        return;
+      }
 
-    this.newAttributePair = {} as AttributePair;
-    document.activeElement['value'] = '';
+      this.kanbanRows.push({...this.kanbanNewRow, attributeId: selectedAttribute.id});
+    } else {
+      this.kanbanRows.push({...this.kanbanNewRow, correlationId: CorrelationIdGenerator.generate()});
+    }
 
-    this.changed = true;
+    this.kanbanModel.numRows = this.kanbanRows.length;
+
+    this.kanbanNewRow = {attributeName: '', value: ''};
+    this.onChange();
 
     setTimeout(() => {
-      this.selectionHelper.select(1, Number.MAX_SAFE_INTEGER, this.kanbanModel);
+      this.selectionHelper.select(1, this.kanbanRows.length, this.kanbanModel);
     });
   }
 
-  public updateAttribute(attributePair: AttributePair): void {
-    attributePair.attribute = attributePair.attribute.trim();
+  public onUpdateAttribute(selectedRow: number): void {
+    const data = this.kanbanRows[selectedRow];
+    if (!data) {
+      return;
+    }
 
-    delete this.kanbanModel.document.data[attributePair.previousAttributeName];
-    attributePair.previousAttributeName = attributePair.attribute;
+    this.onChange();
 
-    if (attributePair.attribute) {
-      this.kanbanModel.document.data[attributePair.attribute] = attributePair.value;
+    data.attributeName = data.attributeName.trim();
+    if (!data.attributeName) {
+      this.removeRow(selectedRow);
+      return;
+    }
 
+    const selectedAttribute = this.findAttributeByName(data.attributeName);
+    if (data.attributeId && selectedAttribute && selectedAttribute.id !== data.attributeId && this.isAttributeUsed(selectedAttribute.id)) {
+      const previousAttribute = this.findAttributeById(data.attributeId);
+      data.attributeName = previousAttribute.name;
     } else {
-      this.removeAttributePair();
-    }
-
-    this.changed = true;
-  }
-
-  public updateValue(attributePair: AttributePair): void {
-    attributePair.value = attributePair.value.trim();
-
-    if (this.kanbanModel.document.data[attributePair.attribute] !== attributePair.value) {
-      this.changed = true;
-    }
-
-    this.kanbanModel.document.data[attributePair.attribute] = attributePair.value;
-  }
-
-  public toggleDocumentFavorite() {
-    this.store.dispatch(new Update({document: this.kanbanModel.document, toggleFavourite: true}));
-  }
-
-  public confirmDeletion(): void {
-    if (this.kanbanModel.initialized) {
-      this.store.dispatch(new DeleteConfirm({
-        collectionId: this.kanbanModel.document.collectionId,
-        documentId: this.kanbanModel.document.id
-      }));
-
-    } else {
-      this.removed.emit();
+      data.attributeId = selectedAttribute && selectedAttribute.id || null;
+      if (isNullOrUndefined(data.attributeId) && isNullOrUndefined(data.correlationId)) {
+        data.correlationId = CorrelationIdGenerator.generate();
+      }
     }
   }
 
-  private sortByOrder(item: any, element: HTMLElement): number {
-      return Number(element.getAttribute('order'));
+  public updateValue(selectedRow: number): void {
+    const data = this.kanbanRows[selectedRow];
+    if (!data) {
+      return;
+    }
+
+    data.value = data.value.trim();
+    this.onChange();
   }
 
-  private removeAttributePair() {
-  const selectedRow = this.selectionHelper.selection.row;
-  this.attributePairs.splice(selectedRow, 1);
+  public toggleFavorite() {
+    if (isNullOrUndefined(this.lastSyncedFavorite)) {
+      this.lastSyncedFavorite = this.kanbanModel.document.favorite;
+    }
+
+    const value = !this.kanbanModel.document.favorite;
+    this.favoriteChange$.next(value);
+    this.favoriteChange.emit({favorite: value, onlyStore: true});
+  }
+
+  public onRemove(): void {
+    if (this.kanbanChangeSubscription) {
+      this.kanbanChangeSubscription.unsubscribe();
+      this.kanbanChangeSubscription = null;
+    }
+
+    this.remove.emit();
+  }
+
+  public removeRow(selectedRow: number) {
+    this.kanbanRows.splice(selectedRow, 1);
+
+    this.kanbanModel.numRows = this.kanbanRows.length;
 
     setTimeout(() => {
       this.selectionHelper.select(
@@ -231,55 +209,114 @@ export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy
         this.kanbanModel
       );
     });
-  }
 
-  public removeValue() {
-    const selectedRow = this.selectionHelper.selection.row;
-    this.attributePairs[selectedRow].value = '';
-  }
-
-  private refreshDataAttributePairs(): void {
-    if (!this.kanbanModel.document.data) {
-      this.kanbanModel.document.data = {};
+    if (this.kanbanRows.length === 0) {
+      this.onRemove();
     }
+  }
 
-    this.attributePairs = Object.entries(this.kanbanModel.document.data)
-      .sort(([attribute1, value1], [attribute2, value2]) => attribute1.localeCompare(attribute2))
-      .map(([attribute, value]) => {
-        return {
-          attribute: attribute,
-          previousAttributeName: attribute,
-          value: isString(value) ? value : JSON.stringify(value, null, 2)
-        };
-      });
+  public removeValue(selectedRow: number) {
+    this.kanbanRows[selectedRow].value = '';
   }
 
   public unusedAttributes(): AttributeModel[] {
-    return this.kanbanModel.document.collection.attributes.filter(attribute => {
-      return this.kanbanModel.document.data[attribute.id] === undefined;
+    return this.collection.attributes.filter(attribute => {
+      return isNullOrUndefined(this.kanbanRows.find(d => d.attributeId === attribute.id));
     });
+  }
+
+  public findAttributeByName(name: string): AttributeModel {
+    return this.collection.attributes.find(attr => attr.name === name);
+  }
+
+  public findAttributeById(id: string): AttributeModel {
+    return this.collection.attributes.find(attr => attr.id === id);
+  }
+
+  public isAttributeUsed(id: string) {
+    return this.kanbanRows.findIndex(d => d.attributeId === id) !== -1;
   }
 
   public suggestionListId(): string {
     return `${ this.perspectiveId }${ this.kanbanModel.document.id || 'uninitialized' }`;
   }
 
-  public isDefaultAttribute(attributeFullName: string): boolean {
-    return attributeFullName === this.kanbanModel.document.collection.defaultAttributeId;
+  public isDefaultAttribute(attributeId: string): boolean {
+    return attributeId && attributeId === getDefaultAttributeId(this.collection);
   }
 
   public hasWriteRole(): boolean {
-    return this.hasRole(Role.Write);
+    return this.collectionRoles && this.collectionRoles.includes(Role.Write);
   }
 
-  private hasRole(role: string): boolean {
-    const collection = this.kanbanModel.document.collection;
-    const permissions = collection && collection.permissions || {users: [], groups: []};
-    return permissions.users.some((permission: Permission) => permission.roles.includes(role));
+  private pairAttributes() {
+    if (isNullOrUndefined(this.collection)) {
+      return;
+    }
+
+    this.collection.attributes.forEach(attribute => {
+      const row = this.kanbanRows.find(row => row.correlationId && row.correlationId === attribute.correlationId);
+      if (row) {
+        row.attributeId = attribute.id;
+        row.correlationId = null;
+      }
+    });
   }
 
-  public ngOnDestroy(): void {
-    this.currentColumnLayoutManager.remove(this.element.nativeElement);
+  private constructRows() {
+    if (isNullOrUndefined(this.kanbanModel)) {
+      return;
+    }
+
+    Object.keys(this.kanbanModel.document.data).forEach(attributeId => {
+      const row = this.kanbanRows.find(row => row.attributeId === attributeId);
+      if (!row) {
+        const attribute = this.findAttributeById(attributeId);
+        if (attribute) {
+          const attributeName = attribute && attribute.name || '';
+          this.kanbanRows.push({attributeId, attributeName, value: this.kanbanModel.document.data[attributeId]});
+        }
+      }
+    });
   }
 
+  private onChange() {
+    if (isNullOrUndefined(this.kanbanChangeSubscription)) {
+      this.initSubscription();
+    }
+    this.kanbanChange$.next();
+  }
+
+  private initSubscription() {
+    this.kanbanChangeSubscription = this.kanbanChange$.pipe(
+      debounceTime(3000),
+    ).subscribe(() => {
+      this.changes.emit(this.createUpdateDocument());
+    });
+  }
+
+  private createUpdateDocument(): DocumentModel {
+    const data: { [attributeId: string]: any } = this.kanbanRows.filter(row => row.attributeId).reduce((acc, row) => {
+      acc[row.attributeId] = row.value;
+      return acc;
+    }, {});
+
+    const newData: { [attributeName: string]: any } = this.kanbanRows.filter(row => isNullOrUndefined(row.attributeId))
+      .reduce((acc: { [attributeName: string]: any }, row) => {
+        acc[row.attributeName] = {value: row.value, correlationId: row.correlationId};
+        return acc;
+      }, {});
+
+    return {...this.kanbanModel.document, data, newData: Object.keys(newData).length > 0 ? newData : null};
+  }
+
+  private initFavoriteSubscription() {
+    this.favoriteChangeSubscription = this.favoriteChange$.pipe(
+      debounceTime(1000),
+      filter(favorite => favorite !== this.lastSyncedFavorite)
+    ).subscribe(favorite => {
+      this.lastSyncedFavorite = null;
+      this.favoriteChange.emit({favorite, onlyStore: false});
+    });
+  }
 }

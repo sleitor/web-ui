@@ -58,21 +58,20 @@ export class KanbanAddDocumentComponent implements OnInit, OnDestroy {
 
   public onClick(): void {
     this.createKanban.emit({
-      collection: this.selectedCollection,
       collectionId: this.selectedCollection.id,
       correlationId: CorrelationIdGenerator.generate(),
-      data: this.dataWithAttributeNames()
+      data: this.createData()
     });
   }
 
-  private dataWithAttributeNames(): { [attributeName: string]: string } {
-    let result = {};
-
-    this.selectedCollection.attributes.forEach((attribute: AttributeModel) => {
-      result[attribute.id] = '';
-    });
-
-    return result;
+  private createData(): { [attributeId: string]: any } {
+    if (!this.selectedCollection) {
+      return [];
+    }
+    return this.selectedCollection.attributes.reduce((acc, attr) => {
+      acc[attr.id] = '';
+      return acc;
+    }, {});
   }
 
   public disabled(): boolean {

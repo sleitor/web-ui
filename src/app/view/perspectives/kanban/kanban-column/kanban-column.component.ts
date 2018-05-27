@@ -50,8 +50,8 @@ export class KanbanColumnComponent implements OnInit, AfterViewInit {
         KanbanPerspectiveComponent.columns
       );
   }
-  // private sortByOrder(item: any, element: HTMLElement): number {
-  //   return Number(element.getAttribute('order'));
-  // }
+  private sortByOrder(item: any, element: HTMLElement): number {
+    return Number(element.getAttribute('order'));
+  }
 
 }

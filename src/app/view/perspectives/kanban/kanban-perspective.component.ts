@@ -18,28 +18,37 @@
  */
 
 import {Component, ElementRef, HostListener, Input, NgZone, OnDestroy, OnInit, ViewChild} from '@angular/core';
+
 import {Store} from '@ngrx/store';
-import {filter} from 'rxjs/operators';
+import {filter, withLatestFrom} from 'rxjs/operators';
 import {Subscription} from 'rxjs/Subscription';
 import {AppState} from '../../../core/store/app.state';
 import {DocumentModel} from '../../../core/store/documents/document.model';
 import {DocumentsAction} from '../../../core/store/documents/documents.action';
 import {selectDocumentsByCustomQuery} from '../../../core/store/documents/documents.state';
 import {QueryModel} from '../../../core/store/navigation/query.model';
+import {KanbanLayout} from '../../../shared/utils/layout/kanban-layout';
 import {KanbanColumnLayout} from '../../../shared/utils/layout/kanban-column-layout';
+import {KanbanLayoutConfig} from '../../../shared/utils/layout/Kanban-layout-config';
+import {KanbanSortingLayout} from '../../../shared/utils/layout/Kanban-sorting-layout';
 import {KanbanDocumentModel} from './document-data/kanban-document-model';
-import {DeletionHelper} from './util/deletion-helper';
 import {InfiniteScroll} from './util/infinite-scroll';
 import {NavigationHelper} from './util/navigation-helper';
 import {ATTRIBUTE_COLUMN, SelectionHelper, VALUE_COLUMN} from './util/selection-helper';
 import {isNullOrUndefined} from 'util';
 import {KeyCode} from '../../../shared/key-code';
 import {HashCodeGenerator} from '../../../shared/utils/hash-code-generator';
-import {CollectionModel} from '../../../core/store/collections/collection.model';
-import {Permission} from '../../../core/dto';
+import {selectCollectionsByQuery} from '../../../core/store/collections/collections.state';
+import {selectCurrentUserForWorkspace} from '../../../core/store/users/users.state';
+import {userRolesInResource} from '../../../shared/utils/resource.utils';
 import {Role} from '../../../core/model/role';
 import Create = DocumentsAction.Create;
 import UpdateData = DocumentsAction.UpdateData;
+import {DeletionHelper} from './util/deletion-helper';
+import {CollectionModel} from '../../../core/store/collections/collection.model';
+import {CollectionsAction} from '../../../core/store/collections/collections.action';
+import DeleteConfirm = DocumentsAction.DeleteConfirm;
+import {Document} from '../../../core/dto';
 
 @Component({
   selector: 'kanban-perspective',
@@ -50,7 +59,7 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
 
   private _useOwnScrollbar = false;
   public static columns: any[] = [];
-  private static documents: any[] = [];
+  // private static documents: any[] = [];
 
   @HostListener('document:keydown', ['$event'])
   public onKeyboardClick(event: KeyboardEvent) {
@@ -74,13 +83,13 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
     return this._useOwnScrollbar;
   }
 
-  public set useOwnScrollbar(value: boolean) {
-    this._useOwnScrollbar = value;
-
-    if (this.infiniteScroll) {
-      this.infiniteScroll.setUseParentScrollbar(value);
-    }
-  }
+  // public set useOwnScrollbar(value: boolean) {
+  //   this._useOwnScrollbar = value;
+  //
+  //   if (this.infiniteScroll) {
+  //     this.infiniteScroll.setUseParentScrollbar(value);
+  //   }
+  // }
 
   @ViewChild('layout')
   public layoutElement: ElementRef;
@@ -95,10 +104,15 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
 
   public selectionHelper: SelectionHelper;
 
+  public collectionRoles: { [collectionId: string]: string[] };
+
   private deletionHelper: DeletionHelper;
 
   // public static layoutManagers: KanbanLayout[] = [];
+
   public static columnLayoutManagers: KanbanColumnLayout[] = [];
+
+  private subscriptions: Subscription[] = [];
 
   private pageSubscriptions: Subscription[] = [];
 
@@ -106,7 +120,11 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
 
   private allLoaded: boolean;
 
-  private page = 0;
+  private collectionsSubscription: Subscription;
+
+  private collections: { [collectionId: string]: CollectionModel };
+
+  private attributes: Set<string> = new Set();
 
   constructor(private store: Store<AppState>,
               private zone: NgZone,
@@ -115,37 +133,80 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
 
   public ngOnInit(): void {
 
+    // this.createLayoutManager();
+    this.createInfiniteScroll();
+    this.createDefectionHelper();
+    this.createSelectionHelper();
+    this.createNavigationHelper();
+    this.createCollectionsSubscription();
+  }
+
+  private createInfiniteScroll() {
     this.infiniteScroll = new InfiniteScroll(
       () => this.loadMoreOnInfiniteScroll(),
       this.element.nativeElement,
       this.useOwnScrollbar
     );
     this.infiniteScroll.initialize();
+  }
 
+  private createSelectionHelper() {
     this.selectionHelper = new SelectionHelper(
       this.kanbans,
       () => this.documentsPerRow(),
       this.perspectiveId
     );
+  }
 
-    this.navigationHelper = new NavigationHelper(this.store, () => this.documentsPerRow());
-    this.navigationHelper.setCallback(() => this.reinitializeKanbans());
-    this.navigationHelper.initialize();
-
+  private createDefectionHelper() {
     this.deletionHelper = new DeletionHelper(this.store, this.kanbans);
     this.deletionHelper.initialize();
   }
 
-  private reinitializeKanbans(): void {
-    this.resetToInitialState();
-    this.getKanbans();
+  private createNavigationHelper() {
+    this.navigationHelper = new NavigationHelper(this.store, () => this.documentsPerRow());
+    this.navigationHelper.onChange(() => this.resetToInitialState());
+    this.navigationHelper.onValidNavigation(() => this.getKanbans());
+    this.navigationHelper.initialize();
+  }
+
+  private createCollectionsSubscription() {
+    this.collectionsSubscription = this.store.select(selectCollectionsByQuery).pipe(
+      withLatestFrom(this.store.select(selectCurrentUserForWorkspace))
+    ).subscribe(([collections, user]) => {
+      this.collections = collections.reduce((acc, coll) => {
+        acc[coll.id] = coll;
+        return acc;
+      }, {});
+      this.collectionRoles = collections.reduce((roles, collection) => {
+        roles[collection.id] = userRolesInResource(user, collection);
+        return roles;
+      }, {});
+    });
+  }
+
+  public onFavoriteChange(document: Document, data: { favorite: boolean, onlyStore: boolean }) {
+    const {favorite, onlyStore} = data;
+    if (onlyStore) {
+      if (favorite) {
+        this.store.dispatch(new DocumentsAction.AddFavoriteSuccess({documentId: document.id}));
+      } else {
+        this.store.dispatch(new DocumentsAction.RemoveFavoriteSuccess({documentId: document.id}));
+      }
+    } else {
+      if (favorite) {
+        this.store.dispatch(new DocumentsAction.AddFavorite({collectionId: document.collectionId, documentId: document.id}));
+      } else {
+        this.store.dispatch(new DocumentsAction.RemoveFavorite({collectionId: document.collectionId, documentId: document.id}));
+      }
+    }
   }
 
   private resetToInitialState(): void {
     this.allLoaded = false;
-    this.page = 0;
+    this.subscriptions.forEach(subscription => subscription.unsubscribe());
+    this.subscriptions.splice(0);
     this.kanbans.splice(0);
-    this.pageSubscriptions.forEach(subscription => subscription.unsubscribe());
   }
 
   public fetchQueryDocuments(queryModel: QueryModel): void {
@@ -153,16 +214,16 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
   }
 
   public hasSingleCollection(): boolean {
-    return this.navigationHelper.hasOneCollection();
+    return this.getCollectionIds().length === 1;
   }
 
   public hasCreateRights(): boolean {
-    return this.kanbans[0] && this.collectionHasWriteRole(this.kanbans[0].document.collection);
+    const keys = this.getCollectionIds();
+    return keys.length === 1 && this.collectionRoles[keys[0]].includes(Role.Write);
   }
 
-  public collectionHasWriteRole(collection: CollectionModel): boolean {
-    const permissions = collection && collection.permissions || {users: [], groups: []};
-    return permissions.users.some((permission: Permission) => permission.roles.includes(Role.Write));
+  private getCollectionIds(): string[] {
+    return this.collectionRoles && Object.keys(this.collectionRoles) || [];
   }
 
   private checkAllLoaded(documents: DocumentModel[]): void {
@@ -178,7 +239,8 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
   private getKanbans(): void {
     this.infiniteScroll.startLoading();
 
-    const queryModel = this.navigationHelper.queryWithPagination(this.page++);
+    const page = this.subscriptions.length;
+    const queryModel = this.navigationHelper.queryWithPagination(page);
     this.fetchQueryDocuments(queryModel);
     this.subscribeOnDocuments(queryModel);
   }
@@ -199,39 +261,58 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
   }
 
   private createdKanbanPreferredColumn(focusedKanban: KanbanDocumentModel): number {
-    const attributes = Object.keys(focusedKanban.document.data);
-    if (attributes.length === 0) {
+    if (Object.keys(focusedKanban.document.data).length === 0) {
       return ATTRIBUTE_COLUMN;
     }
 
     return VALUE_COLUMN;
   }
 
-  public kanbanChanged(changedKanban: KanbanDocumentModel): void {
-    if (this.kanbanInInitialState(changedKanban)) {
+  public kanbanChanged(changedKanban: KanbanDocumentModel, document: DocumentModel): void {
+    if (this.kanbanInInitialState(changedKanban, document)) {
       return;
     }
 
     if (!changedKanban.initialized) {
-      this.initializeKanban(changedKanban);
+      this.initializeKanban(changedKanban, document);
       return;
     }
 
-    this.updateDocument(changedKanban);
+    this.updateDocument(document);
   }
 
-  private kanbanInInitialState(kanban: KanbanDocumentModel): boolean {
-    const isUninitialized = !kanban.initialized;
-    const hasInitialAttributes = Object.keys(kanban.document.data).length === kanban.document.collection.attributes.length;
-    const hasInitialValues = Object.values(kanban.document.data).every(value => value === '');
+  public removeKanban(kanban: KanbanDocumentModel) {
+    if (kanban.initialized) {
+      this.store.dispatch(new DeleteConfirm({
+        collectionId: kanban.document.collectionId,
+        documentId: kanban.document.id
+      }));
 
-    return isUninitialized && hasInitialAttributes && hasInitialValues;
+    } else {
+      this.deletionHelper.deleteKanban(kanban);
+    }
+  }
+
+  private kanbanInInitialState(kanban: KanbanDocumentModel, document: DocumentModel): boolean {
+    const isUninitialized = !kanban.initialized;
+    const hasInitialAttributes = Object.keys(document.data).length === this.getCollection(kanban).attributes.length;
+    const hasInitialValues = Object.values(document.data).every(d => d.value === '');
+    const hasNotNewValues = isNullOrUndefined(document.newData) || Object.keys(document.newData).length === 0;
+
+    return isUninitialized && hasInitialAttributes && hasInitialValues && hasNotNewValues;
+  }
+
+  public getCollection(kanban: KanbanDocumentModel): CollectionModel {
+    const collectionId = kanban && kanban.document && kanban.document.collectionId;
+    return collectionId && this.collections[collectionId];
   }
 
   private subscribeOnDocuments(queryModel: QueryModel) {
     const subscription = this.store.select(selectDocumentsByCustomQuery(queryModel)).pipe(
       filter(() => this.canFetchDocuments())
-    ).subscribe(documents => this.updateLayoutWithDocuments(documents));
+    ).subscribe(documents => {
+      this.updateLayoutWithDocuments(documents);
+    });
 
     this.pageSubscriptions.push(subscription);
   }
@@ -240,10 +321,11 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
     return this.navigationHelper.validNavigation();
   }
 
-  private updateLayoutWithDocuments(documents) {
+  private updateLayoutWithDocuments(documents: DocumentModel[]) {
     setTimeout(() => {
       this.checkAllLoaded(documents);
       this.addDocumentsNotInLayout(documents);
+      this.refreshExistingDocuments(documents);
       this.focusNewDocumentIfPresent(documents);
 
       this.infiniteScroll.finishLoading();
@@ -251,11 +333,25 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
     });
   }
 
+  private refreshExistingDocuments(documents: DocumentModel[]) {
+    for (let document of documents) {
+      const index = this.kanbans.findIndex(k => k.document.id === document.id);
+      if (index !== -1) {
+        const kanban = {...this.kanbans[index], document};
+        this.kanbans.splice(index, 1, kanban);
+      }
+    }
+  }
+
   private addDocumentsNotInLayout(documents: DocumentModel[]): void {
     const usedDocumentIDs = new Set(this.kanbans.map(kanban => kanban.document.id));
     documents
       .filter(documentModel => !usedDocumentIDs.has(documentModel.id))
-      .forEach(documentModel => this.kanbans.push(this.documentModelToKanbanModel(documentModel)));
+      .forEach(documentModel => {
+        this.kanbans.push(this.documentModelToKanbanModel(documentModel));
+
+        this.attributes = new Set();
+      });
   }
 
   private focusNewDocumentIfPresent(documents: DocumentModel[]): void {
@@ -280,31 +376,48 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
   }
 
   private findKanbanOfDocument(document: DocumentModel): KanbanDocumentModel {
-    return this.kanbans.find(kanban => kanban.document.id === document.id);
+    return this.kanbans
+      .filter(kanban => kanban !== null)
+      .find(kanban => kanban.document.id === document.id);
   }
 
-  private updateDocument(kanban: KanbanDocumentModel) {
-    this.store.dispatch(new UpdateData(
-      {
-        collectionId: kanban.document.collectionId,
-        documentId: kanban.document.id,
-        data: kanban.document.data
-      }
-    ));
-  }
+  private updateDocument(document: DocumentModel) {
+    if (document.newData) {
+      const action = new UpdateData({document});
+      const newAttributes = Object.keys(document.newData).map(name => ({name, constraints: [], correlationId: document.newData[name].correlationId}));
 
-  private initializeKanban(kanbanToInitialize: KanbanDocumentModel): void {
-    if (!kanbanToInitialize.updating) {
-      this.createdDocumentCorrelationId = kanbanToInitialize.document.correlationId;
-      kanbanToInitialize.updating = true;
-
-      this.store.dispatch(new Create({document: kanbanToInitialize.document}));
-      this.kanbans.splice(this.kanbans.indexOf(kanbanToInitialize), 1);
+      this.store.dispatch(new CollectionsAction.CreateAttributes(
+        {collectionId: document.collectionId, attributes: newAttributes, nextAction: action})
+      );
+    } else {
+      this.store.dispatch(new UpdateData({document: document}));
     }
   }
 
-  public deleteKanban(kanban: KanbanDocumentModel): void {
-    this.deletionHelper.deleteKanban(kanban);
+  private initializeKanban(kanbanToInitialize: KanbanDocumentModel, document: DocumentModel): void {
+    if (kanbanToInitialize.updating) {
+      return;
+    }
+
+    this.createdDocumentCorrelationId = kanbanToInitialize.document.correlationId;
+    kanbanToInitialize.updating = true;
+
+    this.createDocument(document);
+    this.kanbans.splice(this.kanbans.indexOf(kanbanToInitialize), 1);
+
+  }
+
+  private createDocument(document: DocumentModel) {
+    if (document.newData) {
+      const action = new Create({document});
+      const newAttributes = Object.keys(document.newData).map(name => ({name, constraints: [], correlationId: document.newData[name].correlationId}));
+
+      this.store.dispatch(new CollectionsAction.CreateAttributes(
+        {collectionId: document.collectionId, attributes: newAttributes, nextAction: action})
+      );
+    } else {
+      this.store.dispatch(new Create({document: document}));
+    }
   }
 
   private documentModelToKanbanModel(documentModel: DocumentModel): KanbanDocumentModel {
@@ -339,8 +452,8 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
     return Math.max(1, Math.floor(layoutWidth / kanbanWidth));
   }
 
-  private sortByOrder(item: any, element: HTMLElement): number {
-    return Number(element.getAttribute('order'));
+  public getCollectionRoles(kanban: KanbanDocumentModel): string[] {
+    return this.collectionRoles && this.collectionRoles[kanban.document.collectionId] || [];
   }
 
   public trackByDocument(index: number, kanban: KanbanDocumentModel): number {
