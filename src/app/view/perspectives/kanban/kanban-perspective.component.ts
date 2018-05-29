@@ -17,13 +17,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {Component, ElementRef, HostListener, Input, NgZone, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {Component, ElementRef, EventEmitter, HostListener, Input, NgZone, OnDestroy, OnInit, ViewChild} from '@angular/core';
 
 import {Store} from '@ngrx/store';
 import {filter, withLatestFrom} from 'rxjs/operators';
 import {Subscription} from 'rxjs/Subscription';
 import {AppState} from '../../../core/store/app.state';
-import {DocumentModel} from '../../../core/store/documents/document.model';
+import {DocumentDataModel, DocumentModel} from '../../../core/store/documents/document.model';
 import {DocumentsAction} from '../../../core/store/documents/documents.action';
 import {selectDocumentsByCustomQuery} from '../../../core/store/documents/documents.state';
 import {QueryModel} from '../../../core/store/navigation/query.model';
@@ -45,10 +45,11 @@ import {Role} from '../../../core/model/role';
 import Create = DocumentsAction.Create;
 import UpdateData = DocumentsAction.UpdateData;
 import {DeletionHelper} from './util/deletion-helper';
-import {CollectionModel} from '../../../core/store/collections/collection.model';
+import {AttributeModel, CollectionModel} from '../../../core/store/collections/collection.model';
 import {CollectionsAction} from '../../../core/store/collections/collections.action';
 import DeleteConfirm = DocumentsAction.DeleteConfirm;
 import {Document} from '../../../core/dto';
+import {KanbanColumnModel} from './document-data/kanban-column-model';
 
 @Component({
   selector: 'kanban-perspective',
@@ -100,6 +101,8 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
 
   public kanbans: KanbanDocumentModel[] = [];
 
+  public kanbanColumns: KanbanColumnModel[] = [];
+
   public navigationHelper: NavigationHelper;
 
   public selectionHelper: SelectionHelper;
@@ -124,7 +127,11 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
 
   private collections: { [collectionId: string]: CollectionModel };
 
-  private attributes: Set<string> = new Set();
+  private attributes: Set<AttributeModel> = new Set();
+
+  private selectedAttribute: AttributeModel;
+
+  public attributeSelected = new EventEmitter<string>();
 
   constructor(private store: Store<AppState>,
               private zone: NgZone,
@@ -183,6 +190,35 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
         return roles;
       }, {});
     });
+  }
+
+  private addKanbanColumn(columns: Array<KanbanColumnModel>, kanban: KanbanDocumentModel, attribute) {
+
+    const value: string = kanban.document.data[attribute.id];
+    if (!columns.find(c => c.name === value)) {
+      columns.push(new KanbanColumnModel(columns.length, value, attribute.id));
+    }
+  }
+
+  public selectAttribute(attribute: AttributeModel) {
+    this.selectedAttribute = attribute;
+
+    const columns: Array<KanbanColumnModel> = [];
+    this.kanbans.forEach((k) => {
+      this.addKanbanColumn(columns, k, attribute);
+    });
+    KanbanPerspectiveComponent.columnLayoutManagers = [];
+    this.kanbanColumns = columns;
+    const tempKanbans = this.kanbans;
+    this.kanbans = [];
+    setTimeout(() => {
+      this.kanbans = tempKanbans;
+    });
+    // this.attributeSelected.emit(this.selectedAttribute.id);
+  }
+
+  public getAttributes(): Array<AttributeModel> {
+    return Array.from(this.attributes);
   }
 
   public onFavoriteChange(document: Document, data: { favorite: boolean, onlyStore: boolean }) {
@@ -326,7 +362,7 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
       this.checkAllLoaded(documents);
       this.addDocumentsNotInLayout(documents);
       this.refreshExistingDocuments(documents);
-      this.focusNewDocumentIfPresent(documents);
+      // this.focusNewDocumentIfPresent(documents);
 
       this.infiniteScroll.finishLoading();
       KanbanPerspectiveComponent.columnLayoutManagers.forEach(clM => clM.refresh());
@@ -348,10 +384,16 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
     documents
       .filter(documentModel => !usedDocumentIDs.has(documentModel.id))
       .forEach(documentModel => {
-        this.kanbans.push(this.documentModelToKanbanModel(documentModel));
-
-        this.attributes = new Set();
+        const kanban: KanbanDocumentModel = this.documentModelToKanbanModel(documentModel);
+        this.kanbans.push(kanban);
+        const collection: CollectionModel = this.getCollection(kanban);
+        collection.attributes.forEach(attr => this.attributes.add(attr));
       });
+
+    const attribute: AttributeModel = Array.from(this.attributes)[0];
+    if (this.selectedAttribute === undefined && this.attributes.size > 0) {
+      this.selectAttribute(attribute);
+    }
   }
 
   private focusNewDocumentIfPresent(documents: DocumentModel[]): void {
@@ -441,8 +483,15 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
   }
 
   // this is stub For test for check column
-  public getKanbanColumn(idx) {
-    return KanbanPerspectiveComponent.columnLayoutManagers[idx];
+  public getKanbanColumn(kanban: KanbanDocumentModel) {
+    if (this.selectedAttribute) {
+      const { id } = this.selectedAttribute;
+      const column = this.kanbanColumns.find(c => c.rowId === id && c.name === kanban.document.data[id]);
+      if (column) {
+        return KanbanPerspectiveComponent.columnLayoutManagers[column.managerId];
+      }
+    }
+    // return KanbanPerspectiveComponent.columnLayoutManagers[idx];
   }
 
   private documentsPerRow(): number {

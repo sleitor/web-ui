@@ -96,7 +96,9 @@ export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   public ngAfterViewInit(): void {
-    this.currentColumnLayoutManager.add(this.element.nativeElement);
+    if (this.currentColumnLayoutManager) {
+      this.currentColumnLayoutManager.add(this.element.nativeElement);
+    }
   }
 
   private disableScrollOnNavigation(): void {

@@ -4,6 +4,7 @@ import {KanbanColumnSortingLayout} from '../../../../shared/utils/layout/kanban-
 import {KanbanColumnLayoutConfig} from '../../../../shared/utils/layout/kanban-column-layout-config';
 import {KanbanColumnLayout} from '../../../../shared/utils/layout/kanban-column-layout';
 import {KanbanLayoutConfig} from '../../../../shared/utils/layout/kanban-layout-config';
+import {KanbanColumnModel} from '../document-data/kanban-column-model';
 
 @Component({
   selector: 'kanban-column',
@@ -18,14 +19,15 @@ export class KanbanColumnComponent implements OnInit, AfterViewInit {
   public columnLayoutManager: KanbanColumnLayout;
 
   @Input()
-  public id: String;
+  public kanbanColumn: KanbanColumnModel;
+
   private layoutColumnManager: KanbanColumnLayout;
   private static documents: any[] = [];
 
   constructor(private zone: NgZone, private element: ElementRef) { }
 
   public ngOnInit() {
-    console.log('id', this.id);
+    console.log('id', this.kanbanColumn.managerId);
     this.layoutColumnManager = new KanbanColumnSortingLayout(
       '.kanban-document-layout',
       new KanbanLayoutConfig(),

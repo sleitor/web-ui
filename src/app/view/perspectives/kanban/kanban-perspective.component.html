@@ -1,15 +1,37 @@
 <div class="mx-5" #layout>
-  <div class="m-2">
+  <div class="form-inline">
     <add-document
+      class="form-control mr-2 p-0"
       [hasCollection]="hasSingleCollection()"
       [hasRights]="hasCreateRights()"
       (createKanban)="createKanban($event)">
     </add-document>
+    <button class="btn form-control mr-2 p-0">
+      <i class="fa fa-cog"></i>
+    </button>
+    <div class="form-control dropdown mr-2 p-0" title="Perspective" i18n-title="@@view.perspective">
+      <div class="dropdown-toggle py-1 px-2 align-items-center"
+           id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <span class="ml-1 text-nowrap" i18n="@@view.perspective.name">{{selectedAttribute && selectedAttribute.name}}</span>
+
+      </div>
+      <div class="dropdown-menu">
+        <h6 class="dropdown-header">Select...</h6>
+        <button *ngFor="let attribute of getAttributes()"
+                class="dropdown-item"
+                type="button"
+                (click)="selectAttribute(attribute)"
+        >
+          {{ attribute.name }}
+        </button>
+      </div>
+    </div>
   </div>
   <div class="board">
-    <kanban-column [id]="1"></kanban-column>
-    <kanban-column [id]="2"></kanban-column>
-    <kanban-column [id]="3"></kanban-column>
+    <kanban-column
+        *ngFor="let kanbanColumn of kanbanColumns; let idx = index;"
+        [kanbanColumn]=kanbanColumn
+    ></kanban-column>
 
     <kanban-document *ngFor="let kanban of kanbans; let idx = index; trackBy:trackByDocument"
                      class="layout-item card kanban {{ !kanban.initialized ? 'uninitialized' : 'initialized' }}"
@@ -19,7 +41,7 @@
                      [kanbanModel]="kanbanWithIndex(kanban, idx)"
                      [perspectiveId]="perspectiveId"
                      [layoutManager]="layoutManager"
-                     [currentColumnLayoutManager]="getKanbanColumn(idx)"
+                     [currentColumnLayoutManager]="getKanbanColumn(kanban)"
                      [selectionHelper]="selectionHelper"
                      [navigationHelper]="navigationHelper"
                      (favoriteChange)="onFavoriteChange(kanban.document, $event)"
