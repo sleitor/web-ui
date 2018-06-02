@@ -21,7 +21,7 @@ import {Action} from '@ngrx/store';
 import {QueryModel} from '../navigation/query.model';
 import {SmartDocModel} from '../smartdoc/smartdoc.model';
 import {TableConfig} from '../tables/table.model';
-import {KanbanConfigModel, DetailConfigModel, PostItConfigModel, SearchConfigModel, TableConfigModel, ViewConfigModel, ViewModel} from './view.model';
+import {KanbanConfigModel, DetailConfigModel, PostItConfigModel, SearchConfigModel, TableConfigModel, ViewConfigModel, ViewCursor, ViewModel} from './view.model';
 
 export enum ViewsActionType {
 
@@ -46,6 +46,8 @@ export enum ViewsActionType {
   CHANGE_SMARTDOC_CONFIG = '[Views] Change Smart Document Config',
   CHANGE_TABLE_CONFIG = '[Views] Change Table Config',
   CHANGE_TABLE2_CONFIG = '[Views] Change Table 2 Config',
+
+  SET_CURSOR = '[Views] Set Cursor',
 
   CLEAR = '[Views] Clear'
 
@@ -179,6 +181,13 @@ export namespace ViewsAction {
     }
   }
 
+  export class SetCursor implements Action {
+    public readonly type = ViewsActionType.SET_CURSOR;
+
+    public constructor(public payload: { cursor: ViewCursor }) {
+    }
+  }
+
   export class Clear implements Action {
     public readonly type = ViewsActionType.CLEAR;
 
@@ -189,7 +198,7 @@ export namespace ViewsAction {
   export type All = GetByCode | GetSuccess | GetFailure |
     Create | CreateSuccess | CreateFailure |
     Update | UpdateSuccess | UpdateFailure |
-    ChangeConfig | ChangeDetailConfig | ChangePostItConfig | ChangeKanbanConfig | ChangeSearchConfig | ChangeSmartDocConfig | ChangeTableConfig | ChangeTable2Config |
-    Clear;
+    ChangeConfig | ChangeDetailConfig | ChangePostItConfig | ChangeKanbanConfig | ChangeSearchConfig | ChangeSmartDocConfig | ChangeTableConfig |
+    ChangeTable2Config | SetCursor | Clear;
 
 }

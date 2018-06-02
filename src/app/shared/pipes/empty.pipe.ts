@@ -17,19 +17,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {ErrorHandler, Injectable} from '@angular/core';
+import {Pipe, PipeTransform} from '@angular/core';
 
-import {LumeerError} from './lumeer.error';
+@Pipe({
+  name: 'empty'
+})
+export class EmptyPipe implements PipeTransform {
 
-/**
- * This class provides handling unexpecting errors
- */
-@Injectable()
-export class LumeerErrorHandler implements ErrorHandler {
-
-  public handleError(error: LumeerError): void {
-    // TODO use Rollbar or something similar
-    console.error(error);
+  public transform(value: any[] | string): boolean {
+    return !value || value.length === 0;
   }
 
 }
