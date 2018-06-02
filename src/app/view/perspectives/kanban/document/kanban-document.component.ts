@@ -17,7 +17,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, SimpleChanges, ViewChild} from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input,
+  OnDestroy,
+  OnInit,
+  Output,
+  SimpleChanges,
+  ViewChild
+} from '@angular/core';
 
 import {Store} from '@ngrx/store';
 import {isNullOrUndefined} from 'util';
@@ -53,6 +65,7 @@ export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   @Input() public layoutManager: KanbanLayout;
   @Input() public navigationHelper: NavigationHelper;
   @Input() public selectionHelper: SelectionHelper;
+  @Input() public onReleaseDocument: EventEmitter<any>;
 
   @Output() public remove = new EventEmitter();
   @Output() public changes = new EventEmitter();
@@ -71,7 +84,8 @@ export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   private favoriteChangeSubscription: Subscription;
 
   constructor(private store: Store<AppState>,
-              private element: ElementRef) {
+              private element: ElementRef,
+              private ref: ChangeDetectorRef) {
   }
 
   public ngOnChanges(changes: SimpleChanges) {
@@ -85,15 +99,30 @@ export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   public ngOnInit(): void {
+    this.kanbanModel.element = this.element;
     this.disableScrollOnNavigation();
     this.initFavoriteSubscription();
+    this.onReleaseDocument.subscribe((request) => {
+      if (this.kanbanModel.index === request.kanban.index) {
+        this.kanbanRows.map((kR, index) => {
+          if (kR.attributeId === request.newColumnModel.rowId) {
+            const selectedRow = index;
+            kR.value = request.newColumnModel.name;
+            this.updateValue(selectedRow);
+            // ApplicationRef.bootstrap();
+            this.ref.detectChanges();
+          }
+        });
+      }
+    });
+
   }
 
   public ngOnDestroy(): void {
     if (this.kanbanChangeSubscription) {
       this.kanbanChangeSubscription.unsubscribe();
     }
-    this.currentColumnLayoutManager.remove(this.element.nativeElement);
+    this.currentColumnLayoutManager.remove(this.kanbanModel);
   }
 
   public ngAfterViewInit(): void {
@@ -102,7 +131,7 @@ export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
   private addDocumentToColumn() {
     if (this.currentColumnLayoutManager) {
-      this.currentColumnLayoutManager.add(this.element.nativeElement);
+      this.currentColumnLayoutManager.add(this.kanbanModel);
       this.kanbanModel.columnIndex = this.currentColumnLayoutManager.index;
     }
   }
@@ -186,7 +215,7 @@ export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     const oldValue = '' + this.kanbanModel.document.data[data.attributeId];
     this.onChange();
     if (data.value !== oldValue) {
-      const request = {kanban: this.element.nativeElement, newColumn: data.value, oldColumnIndex: this.kanbanModel.columnIndex };
+      const request = {kanban: this.kanbanModel, newColumn: data.value, oldColumnIndex: this.kanbanModel.columnIndex };
       this.moveKanban.emit(request);
     }
   }

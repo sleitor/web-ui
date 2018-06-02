@@ -1,7 +1,6 @@
-import {AfterViewInit, Component, ElementRef, Input, NgZone, OnInit} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, Input, NgZone, OnInit, Output} from '@angular/core';
 import {KanbanPerspectiveComponent} from '../kanban-perspective.component';
 import {KanbanColumnSortingLayout} from '../../../../shared/utils/layout/kanban-column-sorting-layout';
-import {KanbanColumnLayoutConfig} from '../../../../shared/utils/layout/kanban-column-layout-config';
 import {KanbanColumnLayout} from '../../../../shared/utils/layout/kanban-column-layout';
 import {KanbanLayoutConfig} from '../../../../shared/utils/layout/kanban-layout-config';
 import {KanbanColumnModel} from '../document-data/kanban-column-model';
@@ -13,16 +12,16 @@ import {KanbanColumnModel} from '../document-data/kanban-column-model';
 })
 export class KanbanColumnComponent implements OnInit, AfterViewInit {
 
-  private kanbanColumnLayoutConfig = new KanbanColumnLayoutConfig();
-
-  @Input()
-  public columnLayoutManager: KanbanColumnLayout;
-
   @Input()
   public kanbanColumn: KanbanColumnModel;
 
+  @Output() public releaseKanban = new EventEmitter();
+
   private layoutColumnManager: KanbanColumnLayout;
-  private static documents: any[] = [];
+
+  private muuriColumn: any;
+  private static muuriColumns: any[] = [];
+  private static dragStartColumn = -1;
 
   constructor(private zone: NgZone, private element: ElementRef) { }
 
@@ -35,14 +34,52 @@ export class KanbanColumnComponent implements OnInit, AfterViewInit {
       '',
       this.zone,
       this.element,
-      KanbanColumnComponent.documents,
+      KanbanColumnComponent.muuriColumns,
+      // this.documents,
       KanbanPerspectiveComponent.columnLayoutManagers.length,
     );
     KanbanPerspectiveComponent.columnLayoutManagers.push(this.layoutColumnManager);
+    this.layoutColumnManager.muuriColumn = KanbanColumnComponent.muuriColumns[KanbanColumnComponent.muuriColumns.length - 1];
+    this.layoutColumnManager.muuriColumn.on('dragStart', () =>  {
+      KanbanColumnComponent.dragStartColumn = this.kanbanColumn.managerId;
+    });
+    this.layoutColumnManager.muuriColumn.on('dragReleaseEnd', (muuriDocument) =>  {
+      const domElement = muuriDocument.getElement();
+      const documentModel = KanbanPerspectiveComponent.kanbans.find(kanban => kanban.element.nativeElement === domElement);
+      // this.releaseKanban.emit(muuriColumn);
+      this.syncDocument();
+      if (documentModel.columnIndex !== KanbanColumnComponent.dragStartColumn && KanbanColumnComponent.dragStartColumn > -1) {
+        const request = {kanban: documentModel, newColumnIndex: documentModel.columnIndex, oldColumnIndex: KanbanColumnComponent.dragStartColumn };
+        this.releaseKanban.emit(request);
+        KanbanColumnComponent.dragStartColumn = -1;
+      }
+    });
   }
 
   public ngAfterViewInit(): void {
-    console.log('ngAfterViewInit KanbanColumnComponent');
+  }
+
+  private syncDocument() {
+    const cLMs = KanbanPerspectiveComponent.columnLayoutManagers;
+    cLMs.forEach(cLM => {
+      const muuriDocumnets = cLM.muuriColumn.getItems();
+      const newDocumentsArray = [];
+      muuriDocumnets.forEach(muuriDocument => {
+        const domElement = muuriDocument.getElement();
+        const newDocument = KanbanPerspectiveComponent.kanbans.find(kanban => kanban.element.nativeElement === domElement);
+        if (newDocument) {
+          newDocument.columnIndex = cLM.index;
+          newDocumentsArray.push(newDocument);
+        }
+      });
+      cLM.documentModels = newDocumentsArray;
+    });
+  }
+
+  public static removeEmpryColumns() {
+    this.muuriColumns.forEach(mC => {
+      console.log(mC.getItems());
+    });
   }
 
   // private sortByOrder(item: any, element: HTMLElement): number {

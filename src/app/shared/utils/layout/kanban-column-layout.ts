@@ -19,11 +19,14 @@
 
 import {ElementRef, NgZone} from '@angular/core';
 import {KanbanColumnLayoutConfig} from './kanban-column-layout-config';
+import {KanbanDocumentModel} from '../../../view/perspectives/kanban/document-data/kanban-document-model';
 
 export class KanbanColumnLayout {
 
   protected layout: any;
   public index : any;
+  public muuriColumn: any;
+  public documentModels: KanbanDocumentModel[] = [];
 
   protected insertingElementsAtIndex: number = 0;
 
@@ -43,10 +46,12 @@ export class KanbanColumnLayout {
     this.isInitializedAffterAttempt();
   }
 
-  public add(element: HTMLElement): void {
+  public add(kanbanModel: KanbanDocumentModel): void {
     if (!this.isInitializedAffterAttempt()) {
       return;
     }
+    this.documentModels.push(kanbanModel);
+    const element = kanbanModel.element.nativeElement;
 
     this.zone.runOutsideAngular(() => {
       this.layout.add(element, {index: this.insertingElementsAtIndex});
@@ -54,10 +59,13 @@ export class KanbanColumnLayout {
     });
   }
 
-  public remove(element: HTMLElement): void {
+  public remove(kanbanModel: KanbanDocumentModel): void {
     if (!this.isInitializedAffterAttempt()) {
       return;
     }
+
+    this.documentModels = this.documentModels.filter(document => document.index !== kanbanModel.index);
+    const element = kanbanModel.element.nativeElement;
 
     this.zone.runOutsideAngular(() => {
       this.layout.remove(element);
