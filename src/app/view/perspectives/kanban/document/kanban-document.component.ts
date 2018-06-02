@@ -331,7 +331,7 @@ export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
   private initSubscription() {
     this.kanbanChangeSubscription = this.kanbanChange$.pipe(
-      debounceTime(3000),
+      debounceTime(500),
     ).subscribe(() => {
       this.changes.emit(this.createUpdateDocument());
     });
