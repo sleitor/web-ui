@@ -317,6 +317,28 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
     this.updateDocument(document);
   }
 
+  public moveKanban(request: any) {
+    console.log(request);
+    const newColumn = this.kanbanColumns.find(kC => kC.name === request.newColumn);
+    if (newColumn) {
+      KanbanPerspectiveComponent.columnLayoutManagers[request.oldColumnIndex].remove(request.kanban);
+      KanbanPerspectiveComponent.columnLayoutManagers[newColumn.managerId].add(request.kanban);
+    }
+
+    // console.log(kanban);
+    // const currentColumnManagerIndex = kanban.columnIndex;
+
+    // get current ColumnLayoutManager by kanban
+    // const newColumnLayoutManager = this.getKanbanColumn(kanban);
+    // const newColumnLayoutManagerIndex = KanbanPerspectiveComponent.columnLayoutManagers.indexOf(newColumnLayoutManager);
+
+    // if (newColumnLayoutManagerIndex !== currentColumnManagerIndex) {
+    //   console.log('Yes!');
+    // }
+    // const oldColumn = this.kanbanColumns[newColumnLayoutManagerIndex];
+    // const newColumnName = kanban.document.data[this.selectedAttribute.id];
+  }
+
   public removeKanban(kanban: KanbanDocumentModel) {
     if (kanban.initialized) {
       this.store.dispatch(new DeleteConfirm({
@@ -479,6 +501,8 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
 
   public kanbanWithIndex(kanban: KanbanDocumentModel, index: number): KanbanDocumentModel {
     kanban.index = index;
+    const columnForKanban = this.getKanbanColumn(kanban);
+    kanban.columnIndex = KanbanPerspectiveComponent.columnLayoutManagers.indexOf(columnForKanban);
     return kanban;
   }
 

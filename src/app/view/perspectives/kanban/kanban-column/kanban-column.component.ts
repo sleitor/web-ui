@@ -35,25 +35,18 @@ export class KanbanColumnComponent implements OnInit, AfterViewInit {
       '',
       this.zone,
       this.element,
-      KanbanColumnComponent.documents
+      KanbanColumnComponent.documents,
+      KanbanPerspectiveComponent.columnLayoutManagers.length,
     );
     KanbanPerspectiveComponent.columnLayoutManagers.push(this.layoutColumnManager);
   }
 
   public ngAfterViewInit(): void {
-    this.columnLayoutManager =
-      new KanbanColumnSortingLayout(
-        '.kanban-column-layout',
-        this.kanbanColumnLayoutConfig,
-        // this.sortByOrder,
-        '',
-        this.zone,
-        this.element,
-        KanbanPerspectiveComponent.columns
-      );
+    console.log('ngAfterViewInit KanbanColumnComponent');
   }
-  private sortByOrder(item: any, element: HTMLElement): number {
-    return Number(element.getAttribute('order'));
-  }
+
+  // private sortByOrder(item: any, element: HTMLElement): number {
+  //   return Number(element.getAttribute('order'));
+  // }
 
 }

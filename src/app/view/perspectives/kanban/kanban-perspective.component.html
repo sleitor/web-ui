@@ -45,8 +45,10 @@
                      [selectionHelper]="selectionHelper"
                      [navigationHelper]="navigationHelper"
                      (favoriteChange)="onFavoriteChange(kanban.document, $event)"
-                     (remove)="removePostIt(kanban)"
-                     (changes)="postItChanged(kanban, $event)"></kanban-document>
+                     (remove)="removeKanban(kanban)"
+                     (changes)="kanbanChanged(kanban, $event)"
+                     (moveKanban)="moveKanban($event)"
+    ></kanban-document>
 
 
   </div>

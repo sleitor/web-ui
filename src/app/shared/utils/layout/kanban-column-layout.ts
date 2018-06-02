@@ -23,12 +23,14 @@ import {KanbanColumnLayoutConfig} from './kanban-column-layout-config';
 export class KanbanColumnLayout {
 
   protected layout: any;
+  public index : any;
 
   protected insertingElementsAtIndex: number = 0;
 
-  constructor(protected containerClassName: string, protected parameters: KanbanColumnLayoutConfig, protected zone: NgZone, protected element: ElementRef, public columns: any[]) {
+  constructor(protected containerClassName: string, protected parameters: KanbanColumnLayoutConfig, protected zone: NgZone, protected element: ElementRef, public columns: any[], columnIndex) {
     this.addContainerClassIdentifierIfMissing();
     this.isInitializedAffterAttempt();
+    this.index = columnIndex;
   }
 
   private addContainerClassIdentifierIfMissing(): void {

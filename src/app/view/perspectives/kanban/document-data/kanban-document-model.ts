@@ -22,6 +22,7 @@ import {DocumentModel} from '../../../../core/store/documents/document.model';
 export class KanbanDocumentModel {
 
   public index: number;
+  public columnIndex: number;
   public document: DocumentModel;
 
   public order = 1;

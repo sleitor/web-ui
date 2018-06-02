@@ -56,6 +56,7 @@ export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
   @Output() public remove = new EventEmitter();
   @Output() public changes = new EventEmitter();
+  @Output() public moveKanban = new EventEmitter();
   @Output() public favoriteChange = new EventEmitter<{ favorite: boolean, onlyStore: boolean }>();
 
   @ViewChild('content') public content: ElementRef;
@@ -96,8 +97,13 @@ export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   public ngAfterViewInit(): void {
+    this.addDocumentToColumn();
+  }
+
+  private addDocumentToColumn() {
     if (this.currentColumnLayoutManager) {
       this.currentColumnLayoutManager.add(this.element.nativeElement);
+      this.kanbanModel.columnIndex = this.currentColumnLayoutManager.index;
     }
   }
 
@@ -177,7 +183,12 @@ export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     }
 
     data.value = data.value.trim();
+    const oldValue = '' + this.kanbanModel.document.data[data.attributeId];
     this.onChange();
+    if (data.value !== oldValue) {
+      const request = {kanban: this.element.nativeElement, newColumn: data.value, oldColumnIndex: this.kanbanModel.columnIndex };
+      this.moveKanban.emit(request);
+    }
   }
 
   public toggleFavorite() {
