@@ -200,6 +200,12 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
     }
   }
 
+  private createColumn(name: string) {
+    const column = new KanbanColumnModel(this.kanbanColumns.length, name, this.selectedAttribute.id);
+    this.kanbanColumns.push(column);
+    return column;
+  }
+
   public selectAttribute(attribute: AttributeModel) {
     this.selectedAttribute = attribute;
 
@@ -319,24 +325,14 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
 
   public moveKanban(request: any) {
     console.log(request);
-    const newColumn = this.kanbanColumns.find(kC => kC.name === request.newColumn);
-    if (newColumn) {
+    let newColumn = this.kanbanColumns.find(kC => kC.name === request.newColumn);
+    if (!newColumn) {
+      newColumn = this.createColumn(request.newColumn);
+    }
+    setTimeout(() => {
       KanbanPerspectiveComponent.columnLayoutManagers[request.oldColumnIndex].remove(request.kanban);
       KanbanPerspectiveComponent.columnLayoutManagers[newColumn.managerId].add(request.kanban);
-    }
-
-    // console.log(kanban);
-    // const currentColumnManagerIndex = kanban.columnIndex;
-
-    // get current ColumnLayoutManager by kanban
-    // const newColumnLayoutManager = this.getKanbanColumn(kanban);
-    // const newColumnLayoutManagerIndex = KanbanPerspectiveComponent.columnLayoutManagers.indexOf(newColumnLayoutManager);
-
-    // if (newColumnLayoutManagerIndex !== currentColumnManagerIndex) {
-    //   console.log('Yes!');
-    // }
-    // const oldColumn = this.kanbanColumns[newColumnLayoutManagerIndex];
-    // const newColumnName = kanban.document.data[this.selectedAttribute.id];
+    });
   }
 
   public removeKanban(kanban: KanbanDocumentModel) {
@@ -506,7 +502,6 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
     return kanban;
   }
 
-  // this is stub For test for check column
   public getKanbanColumn(kanban: KanbanDocumentModel) {
     if (this.selectedAttribute) {
       const { id } = this.selectedAttribute;
