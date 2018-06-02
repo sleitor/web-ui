@@ -25,17 +25,23 @@ import {KanbanPerspectiveComponent} from './kanban-perspective.component';
 import {KanbanAddDocumentComponent} from './add-document/add-document.component';
 import {KanbanDocumentComponent} from './document/kanban-document.component';
 import { KanbanColumnComponent } from './kanban-column/kanban-column.component';
+import {KanbanService} from './kanban.service';
+
+const komponents = [
+  KanbanAddDocumentComponent,
+  KanbanDocumentComponent,
+  KanbanPerspectiveComponent,
+  KanbanColumnComponent
+];
 
 @NgModule({
   imports: [
     SharedModule,
     RouterModule
   ],
-  declarations: [
-    KanbanAddDocumentComponent,
-    KanbanDocumentComponent,
-    KanbanPerspectiveComponent,
-    KanbanColumnComponent
+  declarations: komponents,
+  providers: [
+    KanbanService
   ],
   entryComponents: [
     KanbanPerspectiveComponent

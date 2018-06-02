@@ -31,9 +31,11 @@
     <kanban-column
         *ngFor="let kanbanColumn of kanbanColumns; let idx = index;"
         [kanbanColumn]=kanbanColumn
+        (releaseKanban)="onReleaseKanban($event)"
+
     ></kanban-column>
 
-    <kanban-document *ngFor="let kanban of kanbans; let idx = index; trackBy:trackByDocument"
+    <kanban-document *ngFor="let kanban of kanbanModels; let idx = index; trackBy:trackByDocument"
                      class="layout-item card kanban {{ !kanban.initialized ? 'uninitialized' : 'initialized' }}"
                      [attr.order]="kanban.order"
                      [collection]="getCollection(kanban)"
@@ -44,6 +46,7 @@
                      [currentColumnLayoutManager]="getKanbanColumn(kanban)"
                      [selectionHelper]="selectionHelper"
                      [navigationHelper]="navigationHelper"
+                     [onReleaseDocument]="onReleaseDocument"
                      (favoriteChange)="onFavoriteChange(kanban.document, $event)"
                      (remove)="removeKanban(kanban)"
                      (changes)="kanbanChanged(kanban, $event)"

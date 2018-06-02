@@ -21,6 +21,7 @@ export class KanbanColumnModel {
   public rowId: string;
   public name?: string;
   public managerId: number;
+  public muuriColumn: any;
 
   constructor(managerId: number, name: string, rowId: string) {
     this.managerId = managerId;

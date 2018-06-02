@@ -18,12 +18,14 @@
  */
 
 import {DocumentModel} from '../../../../core/store/documents/document.model';
+import {ElementRef} from '@angular/core';
 
 export class KanbanDocumentModel {
 
   public index: number;
   public columnIndex: number;
   public document: DocumentModel;
+  public element: ElementRef;
 
   public order = 1;
   public updating = false;
