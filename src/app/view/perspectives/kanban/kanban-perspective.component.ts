@@ -113,7 +113,7 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
 
   private deletionHelper: DeletionHelper;
 
-  public static columnLayoutManagers: KanbanColumnLayout[] = [];
+  public columnLayoutManagers: KanbanColumnLayout[] = [];
 
   private subscriptions: Subscription[] = [];
 
@@ -224,12 +224,12 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
       if (newColumnModel) {
         newColumnIndex = newColumnModel.managerId;
       }
-      this.kanbanColumns.forEach(kC => kC.hidden = kC.rowId !== this.selectedAttribute.id && kC.name !== newColumn);
       if (newColumnIndex !== undefined && k.columnIndex !== undefined) {
         const request = {kanban: k, newColumn, newColumnIndex, oldColumnIndex: k.columnIndex };
         this.moveKanban(request);
       }
     });
+    this.kanbanColumns.forEach(kC => kC.hidden = kC.rowId !== this.selectedAttribute.id);
   }
 
   public getAttributes(): Array<AttributeModel> {
@@ -341,9 +341,9 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
     }
     setTimeout(() => {
       if (request.oldColumnIndex !== undefined) {
-        KanbanPerspectiveComponent.columnLayoutManagers[request.oldColumnIndex].remove(request.kanban);
+        this.columnLayoutManagers[request.oldColumnIndex].remove(request.kanban);
       }
-      KanbanPerspectiveComponent.columnLayoutManagers[newColumn.managerId].add(request.kanban);
+      this.columnLayoutManagers[newColumn.managerId].add(request.kanban);
       request.kanban.columnIndex = newColumn.managerId;
     });
   }
@@ -403,7 +403,7 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
       // this.focusNewDocumentIfPresent(documents);
 
       this.infiniteScroll.finishLoading();
-      KanbanPerspectiveComponent.columnLayoutManagers.forEach(clM => clM.refresh());
+      this.columnLayoutManagers.forEach(clM => clM.refresh());
     });
   }
 
@@ -518,7 +518,7 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
   public kanbanWithIndex(kanban: KanbanDocumentModel, index: number): KanbanDocumentModel {
     kanban.index = index;
     const columnForKanban = this.getKanbanColumn(kanban);
-    kanban.columnIndex = KanbanPerspectiveComponent.columnLayoutManagers.indexOf(columnForKanban);
+    kanban.columnIndex = this.columnLayoutManagers.indexOf(columnForKanban);
     return kanban;
   }
 
@@ -529,7 +529,7 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
       if (!column) {
         column = this.createColumn(undefined, undefined);
       }
-      return KanbanPerspectiveComponent.columnLayoutManagers[column.managerId];
+      return this.columnLayoutManagers[column.managerId];
     }
   }
 

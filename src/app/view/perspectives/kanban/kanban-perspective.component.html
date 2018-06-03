@@ -33,6 +33,8 @@
     <kanban-column
         *ngFor="let kanbanColumn of kanbanColumns; let idx = index;"
         [kanbanColumn]=kanbanColumn
+        [columnLayoutManagers]=columnLayoutManagers
+        [kanbans]="kanbanModels"
         (releaseKanban)="onReleaseKanban($event)"
         [ngClass]="{'hidden': kanbanColumn.hidden}"
     ></kanban-column>
