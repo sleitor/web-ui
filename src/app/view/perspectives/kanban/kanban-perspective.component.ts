@@ -96,6 +96,8 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
   @ViewChild('layout')
   public layoutElement: ElementRef;
 
+  public displaySetting: boolean = false;
+
   public infiniteScroll: InfiniteScroll;
 
   public perspectiveId = String(Math.floor(Math.random() * 1000000000000000) + 1);
@@ -143,7 +145,6 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
   public ngOnInit(): void {
     this.kanbanModels = KanbanPerspectiveComponent.kanbans;
 
-    // this.createLayoutManager();
     this.createInfiniteScroll();
     this.createDefectionHelper();
     this.createSelectionHelper();
@@ -204,8 +205,11 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
   }
 
   private createColumn(name: string) {
-    const column = new KanbanColumnModel(this.kanbanColumns.length, name, this.selectedAttribute.id);
-    this.kanbanColumns.push(column);
+    let column = this.kanbanColumns.find((kC) => kC.name === name);
+    if (!column) {
+      column = new KanbanColumnModel(this.kanbanColumns.length, name, this.selectedAttribute.id);
+      this.kanbanColumns.push(column);
+    }
     return column;
   }
 
@@ -293,6 +297,8 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
   public createKanban(document: DocumentModel): void {
     const newKanban = this.documentModelToKanbanModel(document);
     KanbanPerspectiveComponent.kanbans.unshift(newKanban);
+    const request = {kanban: newKanban, newColumn: undefined, oldColumnIndex: undefined };
+    this.moveKanban(request);
 
     setTimeout(() => {
       this.selectAndFocusCreatedKanban(newKanban);
@@ -332,7 +338,9 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
       newColumn = this.createColumn(request.newColumn);
     }
     setTimeout(() => {
-      KanbanPerspectiveComponent.columnLayoutManagers[request.oldColumnIndex].remove(request.kanban);
+      if (request.oldColumnIndex) {
+        KanbanPerspectiveComponent.columnLayoutManagers[request.oldColumnIndex].remove(request.kanban);
+      }
       KanbanPerspectiveComponent.columnLayoutManagers[newColumn.managerId].add(request.kanban);
       request.kanban.columnIndex = newColumn.managerId;
     });
@@ -513,10 +521,11 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
   public getKanbanColumn(kanban: KanbanDocumentModel) {
     if (this.selectedAttribute) {
       const { id } = this.selectedAttribute;
-      const column = this.kanbanColumns.find(c => c.rowId === id && c.name === kanban.document.data[id]);
-      if (column) {
-        return KanbanPerspectiveComponent.columnLayoutManagers[column.managerId];
+      let column = this.kanbanColumns.find(c => c.rowId === id && c.name === kanban.document.data[id]);
+      if (!column) {
+        column = this.createColumn(undefined);
       }
+      return KanbanPerspectiveComponent.columnLayoutManagers[column.managerId];
     }
   }
 

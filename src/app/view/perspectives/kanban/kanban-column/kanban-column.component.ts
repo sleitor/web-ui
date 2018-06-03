@@ -46,7 +46,6 @@ export class KanbanColumnComponent implements OnInit, AfterViewInit {
     this.layoutColumnManager.muuriColumn.on('dragReleaseEnd', (muuriDocument) =>  {
       const domElement = muuriDocument.getElement();
       const documentModel = KanbanPerspectiveComponent.kanbans.find(kanban => kanban.element.nativeElement === domElement);
-      // this.releaseKanban.emit(muuriColumn);
       this.syncDocument();
       if (documentModel.columnIndex !== KanbanColumnComponent.dragStartColumn && KanbanColumnComponent.dragStartColumn > -1) {
         const request = {kanban: documentModel, newColumnIndex: documentModel.columnIndex, oldColumnIndex: KanbanColumnComponent.dragStartColumn };
@@ -57,6 +56,9 @@ export class KanbanColumnComponent implements OnInit, AfterViewInit {
   }
 
   public ngAfterViewInit(): void {
+    setTimeout(() => {
+      this.syncDocument();
+    })
   }
 
   private syncDocument() {
@@ -73,11 +75,13 @@ export class KanbanColumnComponent implements OnInit, AfterViewInit {
         }
       });
       cLM.documentModels = newDocumentsArray;
+      cLM.muuriColumn.layout();
     });
+
   }
 
   public static removeEmpryColumns() {
-    this.muuriColumns.forEach(mC => {
+    KanbanColumnComponent.muuriColumns.forEach(mC => {
       console.log(mC.getItems());
     });
   }

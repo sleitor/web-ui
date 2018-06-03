@@ -100,6 +100,7 @@ export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
   public ngOnInit(): void {
     this.kanbanModel.element = this.element;
+    this.addDocumentToColumn();
     this.disableScrollOnNavigation();
     this.initFavoriteSubscription();
     this.onReleaseDocument.subscribe((request) => {
@@ -126,7 +127,6 @@ export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   public ngAfterViewInit(): void {
-    this.addDocumentToColumn();
   }
 
   private addDocumentToColumn() {

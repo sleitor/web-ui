@@ -1,15 +1,17 @@
 <div class="mx-5" #layout>
-  <div class="form-inline">
+  <div class="form-inline mb-3">
+    <button class="btn form-control m-2" (click)="displaySetting = !displaySetting">
+      <i class="fa fa-cog"></i>
+    </button>
     <add-document
       class="form-control mr-2 p-0"
+      *ngIf="displaySetting"
       [hasCollection]="hasSingleCollection()"
       [hasRights]="hasCreateRights()"
       (createKanban)="createKanban($event)">
     </add-document>
-    <button class="btn form-control mr-2 p-0">
-      <i class="fa fa-cog"></i>
-    </button>
-    <div class="form-control dropdown mr-2 p-0" title="Perspective" i18n-title="@@view.perspective">
+    <label class="m-2" *ngIf="displaySetting">Selected row:</label>
+    <div class="form-control dropdown mr-2 p-0" title="Active row" i18n-title="@@view.perspective" *ngIf="displaySetting">
       <div class="dropdown-toggle py-1 px-2 align-items-center"
            id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
         <span class="ml-1 text-nowrap" i18n="@@view.perspective.name">{{selectedAttribute && selectedAttribute.name}}</span>
