@@ -23,14 +23,11 @@ import {Store} from '@ngrx/store';
 import {filter, withLatestFrom} from 'rxjs/operators';
 import {Subscription} from 'rxjs/Subscription';
 import {AppState} from '../../../core/store/app.state';
-import {DocumentDataModel, DocumentModel} from '../../../core/store/documents/document.model';
+import {DocumentModel} from '../../../core/store/documents/document.model';
 import {DocumentsAction} from '../../../core/store/documents/documents.action';
 import {selectDocumentsByCustomQuery} from '../../../core/store/documents/documents.state';
 import {QueryModel} from '../../../core/store/navigation/query.model';
-import {KanbanLayout} from '../../../shared/utils/layout/kanban-layout';
 import {KanbanColumnLayout} from '../../../shared/utils/layout/kanban-column-layout';
-import {KanbanLayoutConfig} from '../../../shared/utils/layout/Kanban-layout-config';
-import {KanbanSortingLayout} from '../../../shared/utils/layout/Kanban-sorting-layout';
 import {KanbanDocumentModel} from './document-data/kanban-document-model';
 import {InfiniteScroll} from './util/infinite-scroll';
 import {NavigationHelper} from './util/navigation-helper';
@@ -50,7 +47,6 @@ import {CollectionsAction} from '../../../core/store/collections/collections.act
 import DeleteConfirm = DocumentsAction.DeleteConfirm;
 import {Document} from '../../../core/dto';
 import {KanbanColumnModel} from './document-data/kanban-column-model';
-import {KanbanDocumentComponent} from './document/kanban-document.component';
 
 @Component({
   selector: 'kanban-perspective',
@@ -199,13 +195,13 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
   private addKanbanColumn(columns: Array<KanbanColumnModel>, kanban: KanbanDocumentModel, attribute) {
 
     const value: string = kanban.document.data[attribute.id];
-    if (!columns.find(c => c.name === value)) {
+    if (!columns.find(c => c.name === value && c.rowId === attribute.id)) {
       columns.push(new KanbanColumnModel(columns.length, value, attribute.id));
     }
   }
 
-  private createColumn(name: string) {
-    let column = this.kanbanColumns.find((kC) => kC.name === name);
+  private createColumn(columnIndex: number, name: string) {
+      let column = this.kanbanColumns[columnIndex];
     if (!column) {
       column = new KanbanColumnModel(this.kanbanColumns.length, name, this.selectedAttribute.id);
       this.kanbanColumns.push(column);
@@ -216,18 +212,24 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
   public selectAttribute(attribute: AttributeModel) {
     this.selectedAttribute = attribute;
 
-    const columns: Array<KanbanColumnModel> = [];
     this.kanbanModels.forEach((k) => {
-      this.addKanbanColumn(columns, k, attribute);
+      this.addKanbanColumn(this.kanbanColumns, k, attribute);
     });
-    KanbanPerspectiveComponent.columnLayoutManagers = [];
-    this.kanbanColumns = columns;
-    const tempKanbans = this.kanbanModels;
-    this.kanbanModels = [];
-    setTimeout(() => {
-      this.kanbanModels = tempKanbans;
+
+    this.kanbanModels.forEach(k => {
+
+      let newColumn = k.document.data[this.selectedAttribute.id];
+      let newColumnModel = this.kanbanColumns.find(kC => kC.rowId === this.selectedAttribute.id && kC.name === newColumn);
+      let newColumnIndex = undefined;
+      if (newColumnModel) {
+        newColumnIndex = newColumnModel.managerId;
+      }
+      this.kanbanColumns.forEach(kC => kC.hidden = kC.rowId !== this.selectedAttribute.id && kC.name !== newColumn);
+      if (newColumnIndex !== undefined && k.columnIndex !== undefined) {
+        const request = {kanban: k, newColumn, newColumnIndex, oldColumnIndex: k.columnIndex };
+        this.moveKanban(request);
+      }
     });
-    // this.attributeSelected.emit(this.selectedAttribute.id);
   }
 
   public getAttributes(): Array<AttributeModel> {
@@ -333,9 +335,9 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
   }
 
   public moveKanban(request: any) {
-    let newColumn = this.kanbanColumns.find(kC => kC.name === request.newColumn);
+    let newColumn = this.kanbanColumns.find(kC => kC.name === request.newColumn && kC.rowId === this.selectedAttribute.id);
     if (!newColumn) {
-      newColumn = this.createColumn(request.newColumn);
+      newColumn = this.createColumn(request.newColumnIndex, request.newColumn);
     }
     setTimeout(() => {
       if (request.oldColumnIndex !== undefined) {
@@ -348,7 +350,9 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
 
   public onReleaseKanban(request) {
     request.newColumnModel = this.kanbanColumns[request.newColumnIndex];
-    this.onReleaseDocument.emit(request);
+    if (this.selectedAttribute.id === request.newColumnModel.rowId) {
+      this.onReleaseDocument.emit(request);
+    }
   }
 
   public removeKanban(kanban: KanbanDocumentModel) {
@@ -523,7 +527,7 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
       const { id } = this.selectedAttribute;
       let column = this.kanbanColumns.find(c => c.rowId === id && c.name === kanban.document.data[id]);
       if (!column) {
-        column = this.createColumn(undefined);
+        column = this.createColumn(undefined, undefined);
       }
       return KanbanPerspectiveComponent.columnLayoutManagers[column.managerId];
     }

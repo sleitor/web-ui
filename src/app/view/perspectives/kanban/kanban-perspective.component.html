@@ -34,7 +34,7 @@
         *ngFor="let kanbanColumn of kanbanColumns; let idx = index;"
         [kanbanColumn]=kanbanColumn
         (releaseKanban)="onReleaseKanban($event)"
-
+        [ngClass]="{'hidden': kanbanColumn.hidden}"
     ></kanban-column>
 
     <kanban-document *ngFor="let kanban of kanbanModels; let idx = index; trackBy:trackByDocument"

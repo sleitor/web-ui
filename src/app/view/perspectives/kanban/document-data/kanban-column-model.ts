@@ -22,11 +22,13 @@ export class KanbanColumnModel {
   public name?: string;
   public managerId: number;
   public muuriColumn: any;
+  public hidden: boolean;
 
   constructor(managerId: number, name: string, rowId: string) {
     this.managerId = managerId;
     this.rowId = rowId;
     this.name = name;
+    this.hidden = false;
   }
 
 }

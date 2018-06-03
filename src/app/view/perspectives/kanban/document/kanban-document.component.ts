@@ -100,9 +100,12 @@ export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
   public ngOnInit(): void {
     this.kanbanModel.element = this.element;
-    this.addDocumentToColumn();
     this.disableScrollOnNavigation();
     this.initFavoriteSubscription();
+  }
+
+  public ngAfterViewInit(): void {
+    this.addDocumentToColumn();
     this.onReleaseDocument.subscribe((request) => {
       if (this.kanbanModel.index === request.kanban.index) {
         this.kanbanRows.map((kR, index) => {
@@ -124,9 +127,6 @@ export class KanbanDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       this.kanbanChangeSubscription.unsubscribe();
     }
     this.currentColumnLayoutManager.remove(this.kanbanModel);
-  }
-
-  public ngAfterViewInit(): void {
   }
 
   private addDocumentToColumn() {
