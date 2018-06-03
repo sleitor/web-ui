@@ -163,14 +163,14 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
 
   private createSelectionHelper() {
     this.selectionHelper = new SelectionHelper(
-      KanbanPerspectiveComponent.kanbans,
+      this.kanbanModels,
       () => this.documentsPerRow(),
       this.perspectiveId
     );
   }
 
   private createDefectionHelper() {
-    this.deletionHelper = new DeletionHelper(this.store, KanbanPerspectiveComponent.kanbans);
+    this.deletionHelper = new DeletionHelper(this.store, this.kanbanModels);
     this.deletionHelper.initialize();
   }
 
@@ -217,15 +217,15 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
     this.selectedAttribute = attribute;
 
     const columns: Array<KanbanColumnModel> = [];
-    KanbanPerspectiveComponent.kanbans.forEach((k) => {
+    this.kanbanModels.forEach((k) => {
       this.addKanbanColumn(columns, k, attribute);
     });
     KanbanPerspectiveComponent.columnLayoutManagers = [];
     this.kanbanColumns = columns;
-    const tempKanbans = KanbanPerspectiveComponent.kanbans;
-    KanbanPerspectiveComponent.kanbans = [];
+    const tempKanbans = this.kanbanModels;
+    this.kanbanModels = [];
     setTimeout(() => {
-      KanbanPerspectiveComponent.kanbans = tempKanbans;
+      this.kanbanModels = tempKanbans;
     });
     // this.attributeSelected.emit(this.selectedAttribute.id);
   }
@@ -255,7 +255,7 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
     this.allLoaded = false;
     this.subscriptions.forEach(subscription => subscription.unsubscribe());
     this.subscriptions.splice(0);
-    KanbanPerspectiveComponent.kanbans.splice(0);
+    this.kanbanModels.splice(0);
   }
 
   public fetchQueryDocuments(queryModel: QueryModel): void {
@@ -296,7 +296,7 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
 
   public createKanban(document: DocumentModel): void {
     const newKanban = this.documentModelToKanbanModel(document);
-    KanbanPerspectiveComponent.kanbans.unshift(newKanban);
+    this.kanbanModels.unshift(newKanban);
     const request = {kanban: newKanban, newColumn: undefined, oldColumnIndex: undefined };
     this.moveKanban(request);
 
@@ -338,7 +338,7 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
       newColumn = this.createColumn(request.newColumn);
     }
     setTimeout(() => {
-      if (request.oldColumnIndex) {
+      if (request.oldColumnIndex !== undefined) {
         KanbanPerspectiveComponent.columnLayoutManagers[request.oldColumnIndex].remove(request.kanban);
       }
       KanbanPerspectiveComponent.columnLayoutManagers[newColumn.managerId].add(request.kanban);
@@ -405,21 +405,21 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
 
   private refreshExistingDocuments(documents: DocumentModel[]) {
     for (let document of documents) {
-      const index = KanbanPerspectiveComponent.kanbans.findIndex(k => k.document.id === document.id);
+      const index = this.kanbanModels.findIndex(k => k.document.id === document.id);
       if (index !== -1) {
-        const kanban = {...KanbanPerspectiveComponent.kanbans[index], document};
-        KanbanPerspectiveComponent.kanbans.splice(index, 1, kanban);
+        const kanban = {...this.kanbanModels[index], document};
+        this.kanbanModels.splice(index, 1, kanban);
       }
     }
   }
 
   private addDocumentsNotInLayout(documents: DocumentModel[]): void {
-    const usedDocumentIDs = new Set(KanbanPerspectiveComponent.kanbans.map(kanban => kanban.document.id));
+    const usedDocumentIDs = new Set(this.kanbanModels.map(kanban => kanban.document.id));
     documents
       .filter(documentModel => !usedDocumentIDs.has(documentModel.id))
       .forEach(documentModel => {
         const kanban: KanbanDocumentModel = this.documentModelToKanbanModel(documentModel);
-        KanbanPerspectiveComponent.kanbans.push(kanban);
+        this.kanbanModels.push(kanban);
         const collection: CollectionModel = this.getCollection(kanban);
         collection.attributes.forEach(attr => this.attributes.add(attr));
       });
@@ -452,7 +452,7 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
   }
 
   private findKanbanOfDocument(document: DocumentModel): KanbanDocumentModel {
-    return KanbanPerspectiveComponent.kanbans
+    return this.kanbanModels
       .filter(kanban => kanban !== null)
       .find(kanban => kanban.document.id === document.id);
   }
@@ -479,7 +479,7 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
     kanbanToInitialize.updating = true;
 
     this.createDocument(document);
-    KanbanPerspectiveComponent.kanbans.splice(KanbanPerspectiveComponent.kanbans.indexOf(kanbanToInitialize), 1);
+    this.kanbanModels.splice(this.kanbanModels.indexOf(kanbanToInitialize), 1);
 
   }
 
@@ -502,7 +502,7 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
     kanban.initialized = Boolean(documentModel.id);
 
     const direction = this.wasCreatedPreviously(kanban) ? 1 : -1;
-    kanban.order = KanbanPerspectiveComponent.kanbans.length * direction;
+    kanban.order = this.kanbanModels.length * direction;
 
     return kanban;
   }
