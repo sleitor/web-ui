@@ -9,6 +9,14 @@
     min-height: 100px;
   }
 
+  kanban-column {
+    border-right: 1px solid $grey-color;
+  }
+
+  kanban-column:last-child {
+    border-right-color: transparent;
+  }
+
 
   .layout-item {
     will-change: transform;
