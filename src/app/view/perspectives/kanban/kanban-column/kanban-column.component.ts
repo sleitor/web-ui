@@ -52,7 +52,7 @@ export class KanbanColumnComponent implements OnInit, AfterViewInit {
       const domElement = muuriDocument.getElement();
       const documentModel = this.kanbans.find(kanban => kanban.element.nativeElement === domElement);
       this.syncDocument();
-      if (documentModel.columnIndex !== KanbanColumnComponent.dragStartColumn && KanbanColumnComponent.dragStartColumn > -1) {
+      if (documentModel && documentModel.columnIndex !== KanbanColumnComponent.dragStartColumn && KanbanColumnComponent.dragStartColumn > -1) {
         const request = {kanban: documentModel, newColumnIndex: documentModel.columnIndex, oldColumnIndex: KanbanColumnComponent.dragStartColumn };
         this.releaseKanban.emit(request);
         KanbanColumnComponent.dragStartColumn = -1;

@@ -299,7 +299,7 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
   public createKanban(document: DocumentModel): void {
     const newKanban = this.documentModelToKanbanModel(document);
     this.kanbanModels.unshift(newKanban);
-    const request = {kanban: newKanban, newColumn: undefined, oldColumnIndex: undefined };
+    const request = {kanban: newKanban, newColumn: newKanban.document.data[this.selectedAttribute.id], oldColumnIndex: undefined };
     this.moveKanban(request);
 
     setTimeout(() => {
@@ -527,7 +527,7 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
       const { id } = this.selectedAttribute;
       let column = this.kanbanColumns.find(c => c.rowId === id && c.name === kanban.document.data[id]);
       if (!column) {
-        column = this.createColumn(undefined, undefined);
+        column = this.createColumn(undefined, kanban.document.data[id]);
       }
       return this.columnLayoutManagers[column.managerId];
     }

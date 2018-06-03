@@ -3,13 +3,13 @@
     <button class="btn form-control m-2" (click)="displaySetting = !displaySetting">
       <i class="fa fa-cog"></i>
     </button>
-    <add-document
-      class="form-control mr-2 p-0"
-      *ngIf="displaySetting"
-      [hasCollection]="hasSingleCollection()"
-      [hasRights]="hasCreateRights()"
-      (createKanban)="createKanban($event)">
-    </add-document>
+    <!--<add-document-->
+      <!--class="form-control mr-2 p-0"-->
+      <!--*ngIf="displaySetting"-->
+      <!--[hasCollection]="hasSingleCollection()"-->
+      <!--[hasRights]="hasCreateRights()"-->
+      <!--(createKanban)="createKanban($event)">-->
+    <!--</add-document>-->
     <label class="m-2" *ngIf="displaySetting">Selected row:</label>
     <div class="form-control dropdown mr-2 p-0" title="Active row" i18n-title="@@view.perspective" *ngIf="displaySetting">
       <div class="dropdown-toggle py-1 px-2 align-items-center"
