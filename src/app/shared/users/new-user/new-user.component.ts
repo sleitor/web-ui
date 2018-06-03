@@ -19,12 +19,13 @@
 
 import {Component, EventEmitter, Output} from '@angular/core';
 
-import {Validator} from "../../../core/validators/validator";
+import {Validator} from '../../../core/validators/validator';
 import {I18n} from '@ngx-translate/i18n-polyfill';
 
 @Component({
-  selector: '[new-user]',
-  templateUrl: './new-user.component.html'
+  selector: 'new-user',
+  templateUrl: './new-user.component.html',
+  styleUrls: [ './new-user.component.scss' ]
 })
 export class NewUserComponent {
 

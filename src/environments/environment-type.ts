@@ -17,22 +17,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {ErrorHandler, Injectable} from "@angular/core";
+import {EnvironmentVariables} from './environment-variables';
 
-declare const require; // Use the require method provided by webpack
-const Raven = require('raven-js');
+export interface Environment extends EnvironmentVariables {
 
-Raven
-  .config('https://518f3e95639941769be32abe63ad9288@sentry.io/1213943')
-  .install();
+  analytics: boolean;
+  keycloak: boolean;
+  production: boolean;
+  storeDevtools: boolean;
 
-@Injectable()
-export class RavenErrorHandler implements ErrorHandler {
-  handleError(err:any) : void {
-    console.error(err);
-    
-    if (LUMEER_ENV === 'production') {
-      Raven.captureException(err.originalError || err);
-    }
-  }
 }

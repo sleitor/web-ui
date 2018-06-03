@@ -17,7 +17,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 import {ResourceModel} from '../../core/model/resource.model';
 import {Role} from '../../core/model/role';
 import {UserModel} from '../../core/store/users/user.model';
@@ -28,7 +27,7 @@ export function userHasManageRoleInResource(user: UserModel, resource: ResourceM
 }
 
 export function userHasRoleInResource(user: UserModel, resource: ResourceModel, role: string): boolean {
-  return userRolesInResource(user, resource).includes(role);
+  return userRolesInResource(user, resource).includes(role.toUpperCase());
 }
 
 export function userRolesInResource(user: UserModel, resource: ResourceModel): string[] {

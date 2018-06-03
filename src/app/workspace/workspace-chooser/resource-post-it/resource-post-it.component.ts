@@ -18,7 +18,6 @@
  */
 
 import {Component, ElementRef, EventEmitter, Input, Output, ViewChild} from '@angular/core';
-import {animate, keyframes, state, style, transition, trigger} from '@angular/animations';
 
 import {ResourceModel} from '../../../core/model/resource.model';
 import {I18n} from '@ngx-translate/i18n-polyfill';
@@ -28,27 +27,13 @@ import {isNullOrUndefined} from 'util';
 import {InputBoxComponent} from '../../../shared/input/input-box/input-box.component';
 import {ResourceType} from '../../../core/model/resource-type';
 import {DEFAULT_COLOR, DEFAULT_ICON} from '../../../core/constants';
+import {animateVisible} from '../../../shared/animations';
 
 @Component({
   selector: 'resource-post-it',
   templateUrl: './resource-post-it.component.html',
   styleUrls: ['./resource-post-it.component.scss'],
-  animations: [
-    trigger('animateVisible', [
-      state('in', style({opacity: 1})),
-      transition('void => *', [
-        animate(500, keyframes([
-          style({opacity: 0}),
-          style({opacity: 1})
-        ]))
-      ]),
-      transition('* => void', [
-        animate(500, keyframes([
-          style({opacity: 1}),
-          style({opacity: 0})
-        ]))
-      ])
-    ])]
+  animations: [ animateVisible ]
 })
 export class ResourcePostItComponent {
 
@@ -109,7 +94,7 @@ export class ResourcePostItComponent {
 
   public onPickerClick() {
     if (this.isPickerVisible) {
-      this.onPickerBlur()
+      this.onPickerBlur();
     } else {
       this.isPickerVisible = true;
       this.lastIcon = null;
@@ -118,7 +103,7 @@ export class ResourcePostItComponent {
   }
 
   public onPickerBlur() {
-    if (!this.isPickerVisible) return;
+    if (!this.isPickerVisible) { return; }
 
     if (this.resource.id) {
       if (this.shouldUpdateIcons()) {
@@ -232,7 +217,7 @@ export class ResourcePostItComponent {
       return;
     }
 
-    if (this.resource.icon === DEFAULT_ICON && this.resource.color == DEFAULT_COLOR) {
+    if (this.resource.icon === DEFAULT_ICON && this.resource.color === DEFAULT_COLOR) {
       this.showPicker();
       return;
     }
@@ -266,6 +251,5 @@ export class ResourcePostItComponent {
       serviceLevel: this.serviceLevel
     });
   }
-
 
 }

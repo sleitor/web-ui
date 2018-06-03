@@ -18,7 +18,6 @@
  */
 
 import {Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, Output, SimpleChanges, ViewChild} from '@angular/core';
-import {animate, keyframes, state, style, transition, trigger} from '@angular/animations';
 
 import {I18n} from '@ngx-translate/i18n-polyfill';
 import {isNullOrUndefined} from 'util';
@@ -31,6 +30,7 @@ import {ServiceLimitsModel} from '../../../core/store/organizations/service-limi
 import {ServiceLevelType} from '../../../core/dto/service-level-type';
 import {ResourceType} from '../../../core/model/resource-type';
 import {ResourceModel} from '../../../core/model/resource.model';
+import {animateOpacityFromUp} from '../../../shared/animations';
 
 const squareSize: number = 200;
 const arrowSize: number = 40;
@@ -39,23 +39,7 @@ const arrowSize: number = 40;
   selector: 'resource-chooser',
   templateUrl: './resource-chooser.component.html',
   styleUrls: ['./resource-chooser.component.scss'],
-  animations: [
-    trigger('animateOpacityFromUp', [
-      state('in', style({transform: 'translateY(0)', opacity: 1})),
-      transition('void => *', [
-        animate(300, keyframes([
-          style({transform: 'translateY(-50px)', opacity: 0, offset: 0}),
-          style({transform: 'translateY(0)', opacity: 1, offset: 1})
-        ]))
-      ]),
-      transition('* => void', [
-        animate(300, keyframes([
-          style({transform: 'translateY(0)', opacity: 1, offset: 0}),
-          style({transform: 'translateY(-50px)', opacity: 0, offset: 1})
-        ]))
-      ])
-    ])
-  ]
+  animations: [ animateOpacityFromUp ]
 })
 export class ResourceChooserComponent implements OnChanges {
 
@@ -167,7 +151,7 @@ export class ResourceChooserComponent implements OnChanges {
   }
 
   private getActiveIndex(): number {
-    if (isNullOrUndefined(this.resources) || isNullOrUndefined(this.selectedId)) return -1;
+    if (isNullOrUndefined(this.resources) || isNullOrUndefined(this.selectedId)) { return -1; }
     return this.resources.findIndex(resource => resource.id === this.selectedId);
   }
 
@@ -297,7 +281,6 @@ export class ResourceChooserComponent implements OnChanges {
     const resourceModel = {...resource, description: newDescription};
     this.resourceUpdate.emit(resourceModel);
   }
-
 
   public getResourceIdentificator(resource: ResourceModel): string {
     return resource.id || resource.correlationId;

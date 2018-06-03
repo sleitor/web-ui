@@ -18,8 +18,8 @@
  */
 
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {DocumentModel} from "../../../core/store/documents/document.model";
-import {CollectionModel} from "../../../core/store/collections/collection.model";
+import {DocumentModel} from '../../../core/store/documents/document.model';
+import {CollectionModel} from '../../../core/store/collections/collection.model';
 
 export const PAGE_SIZE = 100;
 
@@ -30,7 +30,7 @@ export const PAGE_SIZE = 100;
 })
 export class PreviewResultsTableComponent implements OnInit {
 
-  static readonly PAGE_SIZE = 100;
+  public static readonly PAGE_SIZE = 100;
 
   @Input()
   public documents: DocumentModel[];
@@ -48,16 +48,18 @@ export class PreviewResultsTableComponent implements OnInit {
 
   public readonly pageSize = PAGE_SIZE;
 
-  constructor() { }
-
   public ngOnInit() {
-    this.activate(this.activeIndex);
+    this.countPage();
   }
 
   public activate(index: number) {
     this.activeIndex = index;
-    this.page = Math.floor(this.activeIndex / PreviewResultsTableComponent.PAGE_SIZE);
+    this.countPage();
     this.selectDocument.emit(this.documents[this.activeIndex]);
+  }
+
+  private countPage(): void {
+    this.page = Math.floor(this.activeIndex / PreviewResultsTableComponent.PAGE_SIZE);
   }
 
   public selectPage(page: number) {

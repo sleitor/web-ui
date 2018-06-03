@@ -17,13 +17,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {animate, keyframes, state, style, transition, trigger} from '@angular/animations';
 import {Component, OnDestroy, OnInit} from '@angular/core';
 
 import {Store} from '@ngrx/store';
-import {Observable} from 'rxjs/Observable';
+import {combineLatest, Observable, Subscription} from 'rxjs';
 import {filter, first, map, mergeMap, withLatestFrom} from 'rxjs/operators';
-import {Subscription} from 'rxjs/Subscription';
 import {isNullOrUndefined} from 'util';
 import {AppState} from '../../core/store/app.state';
 import {CollectionsAction} from '../../core/store/collections/collections.action';
@@ -40,18 +38,19 @@ import {selectProjectById, selectProjectsCodesForSelectedOrganization, selectPro
 import {RouterAction} from '../../core/store/router/router.action';
 import {ViewsAction} from '../../core/store/views/views.action';
 import {UserSettingsService} from '../../core/user-settings.service';
-import {Router} from "@angular/router";
+import {Router} from '@angular/router';
 import {userHasRoleInResource, userRolesInResource} from '../../shared/utils/resource.utils';
 import {UserModel} from '../../core/store/users/user.model';
 import {mapGroupsOnUser, selectCurrentUser, selectCurrentUserForOrganization} from '../../core/store/users/users.state';
 import {selectGroupsDictionary} from '../../core/store/groups/groups.state';
 import {ServiceLimitsAction} from '../../core/store/organizations/service-limits/service-limits.action';
-import {selectAllServiceLimits, selectServiceLimitsByOrganizationId} from '../../core/store/organizations/service-limits/service-limits.state';
+import {selectAllServiceLimits} from '../../core/store/organizations/service-limits/service-limits.state';
 import {ServiceLimitsModel} from '../../core/store/organizations/service-limits/service-limits.model';
 import {Role} from '../../core/model/role';
 import {Perspective} from '../../view/perspectives/perspective';
 import {ResourceType} from '../../core/model/resource-type';
 import {UsersAction} from '../../core/store/users/users.action';
+import {animateOpacityFromUp} from '../../shared/animations';
 
 const allowedEmails = ['support@lumeer.io', 'martin@vecerovi.com', 'aturing@lumeer.io'];
 
@@ -59,23 +58,7 @@ const allowedEmails = ['support@lumeer.io', 'martin@vecerovi.com', 'aturing@lume
   selector: 'workspace-chooser',
   templateUrl: './workspace-chooser.component.html',
   styleUrls: ['./workspace-chooser.component.scss'],
-  animations: [
-    trigger('animateOpacityFromUp', [
-      state('in', style({transform: 'translateY(0)', opacity: 1})),
-      transition('void => *', [
-        animate(300, keyframes([
-          style({transform: 'translateY(-50px)', opacity: 0, offset: 0}),
-          style({transform: 'translateY(0)', opacity: 1, offset: 1})
-        ]))
-      ]),
-      transition('* => void', [
-        animate(300, keyframes([
-          style({transform: 'translateY(0)', opacity: 1, offset: 0}),
-          style({transform: 'translateY(-50px)', opacity: 0, offset: 1})
-        ]))
-      ])
-    ])
-  ]
+  animations: [ animateOpacityFromUp ]
 })
 export class WorkspaceChooserComponent implements OnInit, OnDestroy {
 
@@ -170,7 +153,7 @@ export class WorkspaceChooserComponent implements OnInit, OnDestroy {
 
   public onProjectSettings(id: string) {
     if (!isNullOrUndefined(this.selectedOrganizationId)) {
-      Observable.combineLatest(
+      combineLatest(
         this.store.select(selectSelectedOrganization),
         this.store.select(selectProjectById(id))
       ).pipe(first())
@@ -184,7 +167,7 @@ export class WorkspaceChooserComponent implements OnInit, OnDestroy {
 
   public onSaveActiveItems() {
     if (!isNullOrUndefined(this.selectedOrganizationId) && !isNullOrUndefined(this.selectedProjectId)) {
-      Observable.combineLatest(
+      combineLatest(
         this.store.select(selectSelectedOrganization),
         this.store.select(selectSelectedProject)
       ).pipe(first())

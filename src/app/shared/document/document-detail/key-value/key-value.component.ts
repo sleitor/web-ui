@@ -18,14 +18,14 @@
  */
 
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {I18n} from "@ngx-translate/i18n-polyfill";
+import {I18n} from '@ngx-translate/i18n-polyfill';
 
 @Component({
   selector: 'key-value',
   templateUrl: './key-value.component.html',
   styleUrls: ['./key-value.component.scss']
 })
-export class KeyValueComponent implements OnInit {
+export class KeyValueComponent {
 
   @Input()
   public key: string;
@@ -51,15 +51,15 @@ export class KeyValueComponent implements OnInit {
   @Input()
   public warning: string;
 
-  constructor(public i18n: I18n) { }
+  @Input()
+  public readOnly = false;
 
-  public ngOnInit() {
-  }
+  constructor(public i18n: I18n) { }
 
   public onNewKey($event: string) {
     this.key = $event;
     this.keyChange.emit($event);
-    this.change.emit([$event, this.value])
+    this.change.emit([$event, this.value]);
   }
 
   public onNewRowValue($event: string) {
