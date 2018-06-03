@@ -21,7 +21,7 @@ import {Component, ElementRef, EventEmitter, HostListener, Input, NgZone, OnDest
 
 import {Store} from '@ngrx/store';
 import {filter, withLatestFrom} from 'rxjs/operators';
-import {Subscription} from 'rxjs/Subscription';
+import {Subscription} from 'rxjs';
 import {AppState} from '../../../core/store/app.state';
 import {DocumentModel} from '../../../core/store/documents/document.model';
 import {DocumentsAction} from '../../../core/store/documents/documents.action';
@@ -98,7 +98,7 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
 
   public perspectiveId = String(Math.floor(Math.random() * 1000000000000000) + 1);
 
-  public static kanbans: KanbanDocumentModel[] = [];
+  public kanbans: KanbanDocumentModel[] = [];
 
   //for Display in perspective
   public kanbanModels: KanbanDocumentModel[] = [];
@@ -139,7 +139,7 @@ export class KanbanPerspectiveComponent implements OnInit, OnDestroy {
   }
 
   public ngOnInit(): void {
-    this.kanbanModels = KanbanPerspectiveComponent.kanbans;
+    // this.kanbanModels = KanbanPerspectiveComponent.kanbans;
 
     this.createInfiniteScroll();
     this.createDefectionHelper();

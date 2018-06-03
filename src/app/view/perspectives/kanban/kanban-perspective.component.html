@@ -46,7 +46,6 @@
                      [collectionRoles]="getCollectionRoles(kanban)"
                      [kanbanModel]="kanbanWithIndex(kanban, idx)"
                      [perspectiveId]="perspectiveId"
-                     [layoutManager]="layoutManager"
                      [currentColumnLayoutManager]="getKanbanColumn(kanban)"
                      [selectionHelper]="selectionHelper"
                      [navigationHelper]="navigationHelper"
@@ -59,7 +58,7 @@
 
 
   </div>
-  <label *ngIf="(!hasSingleCollection() || !hasCreateRights()) && !kanbans.length"
+  <label *ngIf="(!hasSingleCollection() || !hasCreateRights()) && !kanbanModels.length"
          class="label-centered"
          i18n="@@document.list.empty">Nothing To Show</label>
 </div>
